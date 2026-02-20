@@ -14,19 +14,18 @@ export function useHistory() {
     const error = ref<string | null>(null);
 
     // ── Fetch ─────────────────────────────────────────────────────────────────
-
     async function load(p = 1) {
         loading.value = true;
         error.value = null;
 
         try {
-            const data: IHistoryPage = await $fetch(`/api/history?page=${p}&limit=${limit.value}`);
+            const data = await $fetch<IHistoryPage>('/api/history', { query: { page: p, limit: limit.value } });
 
             history.value = data.data;
             total.value = data.total;
             page.value = data.page;
-        } catch (err: any) {
-            error.value = err?.data?.message ?? err.message ?? 'Failed to load history.';
+        } catch (err: unknown) {
+            error.value = (err as Error)?.message ?? 'Failed to load history.';
         } finally {
             loading.value = false;
         }
@@ -41,20 +40,24 @@ export function useHistory() {
 
         try {
             const nextPage = page.value + 1;
-            const data: IHistoryPage = await $fetch(`/api/history?page=${nextPage}&limit=${limit.value}`);
+            const data = await $fetch<IHistoryPage>('/api/history', {
+                query: {
+                    page: nextPage,
+                    limit: limit.value
+                }
+            });
 
             history.value = [...history.value, ...data.data];
             total.value = data.total;
             page.value = data.page;
-        } catch (err: any) {
-            error.value = err?.data?.message ?? err.message ?? 'Failed to load more history.';
+        } catch (err: unknown) {
+            error.value = (err as Error)?.message ?? 'Failed to load more history.';
         } finally {
             loading.value = false;
         }
     }
 
     // ── Mutations ─────────────────────────────────────────────────────────────
-
     async function add(
         summary: IMeetingSummary,
         transcript: string,
@@ -106,7 +109,6 @@ export function useHistory() {
     // ── One-time localStorage migration ───────────────────────────────────────
     // Runs on first load if legacy data exists in localStorage.
     // Removes the localStorage key after a successful migration.
-
     async function migrateFromLocalStorage() {
         if (typeof localStorage === 'undefined') {
             return;
@@ -135,14 +137,14 @@ export function useHistory() {
             localStorage.removeItem(LEGACY_KEY);
             await load(1);
 
-            console.log('[useHistory] Migrated', entries.length, 'entries from localStorage.');
+            // eslint-disable-next-line no-console
+            console.info('[useHistory] Migrated', entries.length, 'entries from localStorage.');
         } catch (err) {
             console.warn('[useHistory] localStorage migration failed:', err);
         }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
     function formatDate(iso: string) {
         return new Date(iso).toLocaleDateString('en-GB', {
             day: '2-digit',

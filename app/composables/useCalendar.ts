@@ -246,7 +246,7 @@ export function useCalendar() {
         const withDeadlines = items.filter((i) => i.deadline && i.deadline !== 'No deadline set');
 
         for (let i = 0; i < withDeadlines.length; i++) {
-            const links = getLinks(withDeadlines[i], meetingType);
+            const links = getLinks(withDeadlines[i] as IActionItem, meetingType);
 
             window.open(target === 'google' ? links.google : links.outlook, '_blank');
 

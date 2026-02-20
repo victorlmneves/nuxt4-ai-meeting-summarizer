@@ -57,6 +57,7 @@ onMounted(() => {
 });
 
 function save() {
+    // eslint-disable-next-line
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config.value));
     saved.value = true;
     setTimeout(() => {
@@ -130,8 +131,8 @@ const enabledCount = computed(
                             <p class="int-desc">Atlassian Jira Software — create Tasks in any project</p>
                         </div>
                     </div>
-                    <label class="toggle">
-                        <input v-model="config.jira.enabled" type="checkbox" />
+                    <label class="toggle" for="jira-toggle">
+                        <input id="jira-toggle" v-model="config.jira.enabled" type="checkbox" />
                         <span class="toggle-track"><span class="toggle-thumb" /></span>
                     </label>
                 </div>
@@ -194,8 +195,8 @@ const enabledCount = computed(
                             <p class="int-desc">Microsoft Azure DevOps — create Work Items in any project</p>
                         </div>
                     </div>
-                    <label class="toggle">
-                        <input v-model="config.azure.enabled" type="checkbox" />
+                    <label class="toggle" for="azure-toggle">
+                        <input id="azure-toggle" v-model="config.azure.enabled" type="checkbox" />
                         <span class="toggle-track"><span class="toggle-thumb" /></span>
                     </label>
                 </div>
@@ -264,8 +265,8 @@ const enabledCount = computed(
                             <p class="int-desc">Create issues in any Linear team</p>
                         </div>
                     </div>
-                    <label class="toggle">
-                        <input v-model="config.linear.enabled" type="checkbox" />
+                    <label class="toggle" for="linear-toggle">
+                        <input id="linear-toggle" v-model="config.linear.enabled" type="checkbox" />
                         <span class="toggle-track"><span class="toggle-thumb" /></span>
                     </label>
                 </div>
@@ -312,8 +313,8 @@ const enabledCount = computed(
                             <p class="int-desc">Create pages in a Notion database</p>
                         </div>
                     </div>
-                    <label class="toggle">
-                        <input v-model="config.notion.enabled" type="checkbox" />
+                    <label class="toggle" for="notion-toggle">
+                        <input id="notion-toggle" v-model="config.notion.enabled" type="checkbox" />
                         <span class="toggle-track"><span class="toggle-thumb" /></span>
                     </label>
                 </div>

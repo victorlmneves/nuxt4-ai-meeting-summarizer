@@ -120,7 +120,7 @@ const activityData = computed(() => {
         const day = e.date.slice(0, 10);
 
         if (day in days) {
-            days[day]++;
+            days[day] = (days[day] ?? 0) + 1;
         }
     });
 
@@ -128,6 +128,7 @@ const activityData = computed(() => {
 });
 
 const maxActivity = computed(() => Math.max(...activityData.value.map((d: { count: number }) => d.count), 1));
+
 // Recent meetings (last 5)
 const recentMeetings = computed(() => history.value.slice(0, 5));
 
@@ -172,6 +173,14 @@ function formatRelative(iso: string) {
 // Bar width % for the activity chart (capped at 100% of column height)
 function barHeight(count: number) {
     return Math.max((count / maxActivity.value) * 100, count > 0 ? 8 : 0);
+}
+
+function getProviderColor(provider: string): string {
+    return providerColors[provider as TProvider] ?? '#999';
+}
+
+function getProviderLabel(provider: string): string {
+    return providerLabels[provider as TProvider] ?? provider;
 }
 </script>
 
@@ -301,15 +310,15 @@ function barHeight(count: number) {
                             </div>
                             <div class="provider-usage">
                                 <div v-for="[prov, count] in providerUsage" :key="prov" class="provider-row">
-                                    <span class="provider-dot" :style="{ background: providerColors[prov] ?? '#999' }" />
-                                    <span class="provider-name-label">{{ providerLabels[prov] ?? prov }}</span>
+                                            <span class="provider-dot" :style="{ background: getProviderColor(prov) }" />
+                                            <span class="provider-name-label">{{ getProviderLabel(prov) }}</span>
                                     <span class="provider-count-label">{{ count }} meeting{{ count !== 1 ? 's' : '' }}</span>
                                     <div class="provider-bar-track">
                                         <div
                                             class="provider-bar-fill"
                                             :style="{
                                                 width: (count / totalMeetings) * 100 + '%',
-                                                background: providerColors[prov] ?? '#999',
+                                                background: getProviderColor(prov),
                                             }"
                                         />
                                     </div>
@@ -368,8 +377,8 @@ function barHeight(count: number) {
                                 <span class="recent-stat">{{ entry.summary.participants.length }} people</span>
                                 <span class="recent-stat">{{ entry.summary.actionItems.length }} actions</span>
                                 <span class="recent-stat">{{ entry.summary.decisions.length }} decisions</span>
-                                <span class="recent-provider" :style="{ color: providerColors[entry.provider] ?? '#999' }">
-                                    {{ providerLabels[entry.provider] ?? entry.provider }}
+                                <span class="recent-provider" :style="{ color: getProviderColor(entry.provider) }">
+                                    {{ getProviderLabel(entry.provider) }}
                                 </span>
                             </div>
                         </div>

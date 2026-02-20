@@ -33,7 +33,7 @@ Return this exact structure:
 }`;
 
 // Call a single provider and return the full JSON string
-async function callProvider(provider: TProvider, text: string, config: any): Promise<string> {
+async function callProvider(provider: TProvider, text: string, config: { anthropicApiKey?: string; openaiApiKey?: string; geminiApiKey?: string }): Promise<string> {
     const userMessage = `Please analyze this meeting transcript:\n\n${text}`;
 
     if (provider === 'anthropic') {
@@ -49,7 +49,13 @@ async function callProvider(provider: TProvider, text: string, config: any): Pro
             messages: [{ role: 'user', content: userMessage }],
         });
 
-        return (response.content[0] as any).text;
+        const textContent = response.content.find((block) => block.type === 'text');
+
+        if (!textContent || textContent.type !== 'text') {
+            throw new Error('No text content in Anthropic response.');
+        }
+
+        return textContent.text;
     } else if (provider === 'openai') {
         if (!config.openaiApiKey) {
             throw new Error('OpenAI API key not configured.');
@@ -64,6 +70,10 @@ async function callProvider(provider: TProvider, text: string, config: any): Pro
                 { role: 'user', content: userMessage },
             ],
         });
+
+        if (!response.choices[0]) {
+            throw new Error('No choices in OpenAI response.');
+        }
 
         return response.choices[0].message.content ?? '';
     } else if (provider === 'gemini') {

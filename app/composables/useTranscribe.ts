@@ -86,8 +86,8 @@ export function useTranscribe() {
             });
 
             return text;
-        } catch (err: any) {
-            error.value = err.message || 'Transcription failed.';
+        } catch (err: unknown) {
+            error.value = (err as Error)?.message || 'Transcription failed.';
 
             return null;
         } finally {

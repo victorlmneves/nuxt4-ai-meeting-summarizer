@@ -117,7 +117,7 @@ export function useIntegrations() {
         status.value[id] = { loading: true, results: [], error: null };
 
         try {
-            let payload: Record<string, any> = {
+            let payload: Record<string, unknown> = {
                 actionItems: summary.actionItems,
                 meetingType: summary.meetingType,
             };
@@ -145,8 +145,8 @@ export function useIntegrations() {
             } else {
                 status.value[id] = { loading: false, results: data.results, error: null };
             }
-        } catch (err: any) {
-            status.value[id] = { loading: false, results: [], error: err.message };
+        } catch (err: unknown) {
+            status.value[id] = { loading: false, results: [], error: (err as Error).message };
         }
     }
 

@@ -4,6 +4,23 @@
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
 import type { IActionItem } from '~/types/index';
 
+interface INotionPagePayload {
+    parent: { database_id: string };
+    properties: Record<string, unknown>;
+    children: Array<{
+        object: 'block';
+        type: 'paragraph';
+        paragraph: {
+            rich_text: Array<{
+                type: 'text';
+                text: {
+                    content: string;
+                };
+            }>;
+        };
+    }>;
+}
+
 const PRIORITY_COLORS: Record<string, string> = {
     high: 'red',
     medium: 'yellow',
@@ -47,7 +64,7 @@ export default defineEventHandler(async (event: H3Event) => {
     const findProp = (...names: string[]) => names.find((n) => props[n]) ?? null;
 
     const titleProp =
-        findProp('Name', 'Task', 'Title', 'Issue', 'Todo') ?? Object.keys(props).find((k) => props[k].type === 'title') ?? 'Name';
+        findProp('Name', 'Task', 'Title', 'Issue', 'Todo') ?? (Object.keys(props).find((k) => props[k]?.type === 'title') ?? 'Name');
     const statusProp = findProp('Status', 'State');
     const assigneeProp = findProp('Assignee', 'Owner', 'Assigned to', 'Person');
     const priorityProp = findProp('Priority');
@@ -58,7 +75,7 @@ export default defineEventHandler(async (event: H3Event) => {
     for (const item of actionItems as IActionItem[]) {
         try {
             // Build properties dynamically based on what the database has
-            const properties: Record<string, any> = {
+            const properties: Record<string, { title?: Array<{ text: { content: string } }>; select?: { name: string; color?: string }; multi_select?: Array<{ name: string }> }> = {
                 [titleProp]: { title: [{ text: { content: item.task } }] },
             };
 
@@ -74,7 +91,7 @@ export default defineEventHandler(async (event: H3Event) => {
                 };
             }
 
-            const payload: any = {
+            const payload: INotionPagePayload = {
                 parent: { database_id: databaseId },
                 properties,
                 children: [
@@ -108,8 +125,8 @@ export default defineEventHandler(async (event: H3Event) => {
             } else {
                 results.push({ task: item.task, url: data.url, error: null });
             }
-        } catch (err: any) {
-            results.push({ task: item.task, url: null, error: err.message });
+        } catch (err: unknown) {
+            results.push({ task: item.task, url: null, error: (err as Error).message });
         }
     }
 

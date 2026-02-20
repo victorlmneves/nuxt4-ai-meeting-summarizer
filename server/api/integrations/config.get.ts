@@ -20,7 +20,7 @@ export default defineEventHandler(async () => {
         .where(userId ? eq(integrationsConfig.userId, userId) : isNull(integrationsConfig.userId));
 
     // Merge all service rows into a single config object
-    const result: Partial<IIntegrationsConfig> = {};
+    const result: Record<string, IIntegrationsConfig[keyof IIntegrationsConfig]> = {};
 
     for (const row of rows) {
         const service = row.service as keyof IIntegrationsConfig;

@@ -1,6 +1,5 @@
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { useDb } from '#server/utils/db';
-import { defineNitroPlugin } from 'nitropack';
 
 // ── Auto-migrate on server startup ────────────────────────────────────────────
 // Runs pending migrations from server/db/migrations/ each time Nitro starts.

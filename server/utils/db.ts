@@ -1,7 +1,6 @@
 import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
 import { mkdirSync } from 'node:fs';
-import { useRuntimeConfig } from '#app';
 import * as schema from '#server/db/schema';
 
 // ── Singleton ─────────────────────────────────────────────────────────────────

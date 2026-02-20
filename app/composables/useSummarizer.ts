@@ -96,16 +96,16 @@ export function useSummarizer() {
 
                             result.value = JSON.parse(cleaned) as IMeetingSummary;
                         }
-                    } catch (parseErr: any) {
+                    } catch (parseErr: unknown) {
                         // Ignore partial JSON chunks mid-stream
-                        if (parseErr.message && !parseErr.message.includes('JSON')) {
+                        if (parseErr instanceof Error && !parseErr.message.includes('JSON')) {
                             throw parseErr;
                         }
                     }
                 }
             }
-        } catch (err: any) {
-            error.value = err.message || 'Something went wrong.';
+        } catch (err: unknown) {
+            error.value = (err as Error)?.message || 'Something went wrong.';
         } finally {
             loading.value = false;
         }

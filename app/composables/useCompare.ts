@@ -34,8 +34,8 @@ export function useCompare() {
             }
 
             results.value = await response.json();
-        } catch (err: any) {
-            error.value = err.message || 'Something went wrong.';
+        } catch (err: unknown) {
+            error.value = (err as Error).message || 'Something went wrong.';
         } finally {
             loading.value = false;
         }

@@ -160,8 +160,10 @@ export default defineEventHandler(async (event: H3Event) => {
 
             stream.write(`data: ${JSON.stringify({ done: true, full: fullText })}\n\n`);
         }
-    } catch (err: any) {
-        stream.write(`data: ${JSON.stringify({ error: err.message || 'An unknown error occurred.' })}\n\n`);
+    } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+
+        stream.write(`data: ${JSON.stringify({ error: errorMessage })}\n\n`);
     } finally {
         stream.end();
     }
