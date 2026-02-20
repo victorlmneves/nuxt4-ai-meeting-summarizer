@@ -2,13 +2,7 @@
 // Creates issues in a Jira project from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-
-interface IActionItem {
-    task: string;
-    owner: string;
-    deadline: string;
-    priority: 'high' | 'medium' | 'low';
-}
+import type { IActionItem } from '~/types/index';
 
 // Map MinutAI priorities to Jira priority names
 const PRIORITY_MAP: Record<string, string> = {
@@ -83,8 +77,8 @@ export default defineEventHandler(async (event: H3Event) => {
             } else {
                 results.push({ task: item.task, url: `${cleanBase}/browse/${data.key}`, error: null });
             }
-        } catch (err: any) {
-            results.push({ task: item.task, url: null, error: err.message });
+        } catch (err: unknown) {
+            results.push({ task: item.task, url: null, error: err instanceof Error ? err.message : 'Unknown error' });
         }
     }
 

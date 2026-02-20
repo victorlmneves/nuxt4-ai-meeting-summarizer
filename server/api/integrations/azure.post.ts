@@ -2,13 +2,7 @@
 // Creates work items in Azure Boards from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-
-interface IActionItem {
-    task: string;
-    owner: string;
-    deadline: string;
-    priority: 'high' | 'medium' | 'low';
-}
+import type { IActionItem } from '~/types/index';
 
 // Map MinutAI priorities to Azure Boards priority values (1=Critical, 2=High, 3=Medium, 4=Low)
 const PRIORITY_MAP: Record<string, number> = {
@@ -84,8 +78,8 @@ export default defineEventHandler(async (event: H3Event) => {
 
                 results.push({ task: item.task, url, error: null });
             }
-        } catch (err: any) {
-            results.push({ task: item.task, url: null, error: err.message });
+        } catch (err: unknown) {
+            results.push({ task: item.task, url: null, error: err instanceof Error ? err.message : 'Unknown error' });
         }
     }
 

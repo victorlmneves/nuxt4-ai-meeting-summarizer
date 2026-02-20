@@ -3,3 +3,6 @@
 .output
 node_modules
 dist
+
+# Local SQLite database (development fallback when TURSO_DB_URL is not set)
+data/

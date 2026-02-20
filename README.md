@@ -2,7 +2,7 @@
 
 Transforms meeting transcripts and raw notes into structured summaries using AI, with integrations for the most common project management tools.
 
-Portfolio demo built with **Nuxt 4** + **Anthropic Claude** + **OpenAI GPT-4o** + **Google Gemini**.
+Portfolio demo built with **Nuxt 4** + **Anthropic Claude** + **OpenAI GPT-4o** + **Google Gemini** + **Turso (LibSQL)** + **Drizzle ORM**.
 
 ---
 
@@ -28,19 +28,20 @@ Portfolio demo built with **Nuxt 4** + **Anthropic Claude** + **OpenAI GPT-4o** 
 
 ### Results
 
-- **Inline editing** — edit any field after analysis (meeting type, summary, action items, decisions, participants, topics); changes persist to history
+- **Inline editing** — edit any field after analysis (meeting type, summary, action items, decisions, participants, topics); changes persist to the database
 - **Export** — copy as Markdown, download `.md` file, copy follow-up email
 - **Calendar** — add individual deadlines or all at once to Google Calendar or Outlook (deep-links, no OAuth required)
 - **Send to integrations** — push action items directly to Jira, Azure Boards, Linear or Notion
 
 ### History & Dashboard
 
-- **History sidebar** — last 20 analyses persisted in `localStorage`; restore any past result with one click
+- **History sidebar** — all analyses persisted server-side in Turso (SQLite); paginated, restore any past result with one click
 - **Dashboard** (`/dashboard`) — aggregate metrics across all meetings: activity chart, action items per person, provider usage, top topics, priority breakdown, meeting types
+- **Auto-migration** — existing `localStorage` history is automatically migrated to the database on first load
 
 ### Integrations (`/integrations`)
 
-Configure API credentials once; they are stored only in your browser's `localStorage` and never sent to any MinutAI server.
+Configure API credentials once; they are stored server-side in the database (per session) and proxied to external APIs.
 
 | Tool             | Auth method                     | What gets created                           |
 | ---------------- | ------------------------------- | ------------------------------------------- |
@@ -51,128 +52,75 @@ Configure API credentials once; they are stored only in your browser's `localSto
 
 ---
 
-## File Map
-
-### Files that existed in the original version
-
-```
-meeting-summarizer/
-├── app/
-│   ├── app.vue
-│   ├── assets/css/main.css
-│   ├── composables/
-│   │   └── useSummarizer.ts        # SSE streaming + response parsing
-│   └── pages/
-│       └── index.vue               # Main UI
-├── server/api/
-│   └── summarize.post.ts           # Calls AI provider, streams SSE
-├── nuxt.config.ts
-├── package.json
-├── tailwind.config.js
-├── .env.example
-└── .gitignore
-```
-
-### Files added during development
-
-```
-app/composables/
-├── useCompare.ts                   # NEW — parallel provider comparison state
-├── useTranscribe.ts                # NEW — Whisper upload with XHR progress tracking
-├── useCalendar.ts                  # NEW — Google Calendar + Outlook deep-link generation
-├── useIntegrations.ts              # NEW — reads localStorage config, calls integration endpoints
-└── useHistory.ts                   # NEW — localStorage history helpers (used by dashboard)
-
-app/pages/
-├── dashboard.vue                   # NEW — metrics dashboard at /dashboard
-└── integrations.vue                # NEW — credentials configuration at /integrations
-
-server/api/
-├── compare.post.ts                 # NEW — calls 2 providers in parallel (Promise.allSettled)
-├── transcribe.post.ts              # NEW — multipart upload → OpenAI Whisper
-└── integrations/
-    ├── jira.post.ts                # NEW — Jira REST API v3
-    ├── azure.post.ts               # NEW — Azure DevOps REST API v7.1 (JSON Patch)
-    ├── linear.post.ts              # NEW — Linear GraphQL API
-    └── notion.post.ts              # NEW — Notion REST API v2022-06-28
-```
-
-### Files modified during development
-
-```
-app/composables/
-└── useSummarizer.ts                # MODIFIED — added InputType ('transcript' | 'free-notes')
-
-app/pages/
-└── index.vue                       # MODIFIED — major additions (see below)
-
-server/api/
-└── summarize.post.ts               # MODIFIED — two system prompts (transcript vs free-notes)
-```
-
-### Changes made to `index.vue`
-
-The main page was extended incrementally. Additions in chronological order:
-
-1. `.vtt` / `.srt` parser functions (`parseVtt`, `parseSrt`) — cleans subtitle files before analysis
-2. History sidebar — `localStorage` persistence, up to 20 entries, restore on click
-3. Compare mode — provider pair selector, parallel submission, side-by-side results with diff highlighting
-4. Free notes tab — dedicated textarea with illustrative placeholder
-5. Audio upload tab — dropzone, Whisper progress bar (upload + processing phases), post-transcription preview
-6. Inline edit mode — all result fields become inputs; saves back to `localStorage` history
-7. Export card — Markdown copy, `.md` download, follow-up email copy
-8. Calendar links — per action item (Google + Outlook) and "Add all" batch button
-9. Send to integrations card — appears only when integrations are configured in `/integrations`
-10. Navigation — Dashboard, Integrations, History buttons added to header
-
----
-
-## Tech Stack
-
-| Layer               | Tech                                                  |
-| ------------------- | ----------------------------------------------------- |
-| Frontend + Backend  | Nuxt 4 (server routes)                                |
-| AI — analysis       | Anthropic SDK · OpenAI SDK · Google Generative AI SDK |
-| AI — transcription  | OpenAI Whisper (`whisper-1`) via multipart upload     |
-| Styling             | CSS custom properties (no UI framework)               |
-| `.docx` parsing     | mammoth (client-side)                                 |
-| State / persistence | Vue `ref` / `computed` + `localStorage`               |
-
----
-
 ## Project Structure
 
 ```
-meeting-summarizer/
+nuxt4-ai-meeting-summarizer/
 ├── app/
 │   ├── app.vue
 │   ├── assets/css/main.css
+│   ├── types/
+│   │   └── index.ts                # Shared interfaces (IHistoryEntry, IMeetingSummary, IActionItem, etc.)
 │   ├── composables/
 │   │   ├── useSummarizer.ts        # SSE streaming, JSON parsing, InputType
 │   │   ├── useCompare.ts           # Parallel provider comparison
 │   │   ├── useTranscribe.ts        # Whisper upload + XHR progress tracking
 │   │   ├── useCalendar.ts          # Deep-link generation + deadline date parsing
-│   │   ├── useIntegrations.ts      # Integration config reader + API caller
-│   │   └── useHistory.ts           # localStorage helpers
+│   │   ├── useIntegrations.ts      # Integration config — server API + localStorage fallback
+│   │   └── useHistory.ts           # History — server API, pagination, localStorage migration
 │   └── pages/
 │       ├── index.vue               # Main app (analysis + all result features)
 │       ├── dashboard.vue           # Aggregate metrics dashboard
 │       └── integrations.vue        # Credentials configuration
-├── server/api/
-│   ├── summarize.post.ts           # Streaming analysis (2 system prompts)
-│   ├── compare.post.ts             # Parallel 2-provider analysis
-│   ├── transcribe.post.ts          # Whisper transcription endpoint
-│   └── integrations/
-│       ├── jira.post.ts
-│       ├── azure.post.ts
-│       ├── linear.post.ts
-│       └── notion.post.ts
+├── server/
+│   ├── db/
+│   │   ├── schema.ts               # Drizzle schema — users, meetings, integrations_config
+│   │   └── migrations/             # Auto-generated SQL migrations (drizzle-kit)
+│   ├── utils/
+│   │   └── db.ts                   # LibSQL + Drizzle singleton (Turso in prod, local file in dev)
+│   ├── plugins/
+│   │   └── migrate.ts              # Runs pending migrations on server boot
+│   └── api/
+│       ├── summarize.post.ts       # Streaming analysis (2 system prompts)
+│       ├── compare.post.ts         # Parallel 2-provider analysis
+│       ├── transcribe.post.ts      # Whisper transcription endpoint
+│       ├── history/
+│       │   ├── index.get.ts        # GET  /api/history          — paginated list
+│       │   ├── index.post.ts       # POST /api/history          — create entry
+│       │   ├── bulk.post.ts        # POST /api/history/bulk     — bulk import (localStorage migration)
+│       │   ├── [id].get.ts         # GET  /api/history/:id      — single entry
+│       │   ├── [id].patch.ts       # PATCH /api/history/:id     — update summary
+│       │   └── [id].delete.ts      # DELETE /api/history/:id    — remove entry
+│       └── integrations/
+│           ├── config.get.ts       # GET /api/integrations/config  — load config
+│           ├── config.put.ts       # PUT /api/integrations/config  — save config
+│           ├── jira.post.ts        # Jira REST API v3
+│           ├── azure.post.ts       # Azure DevOps REST API v7.1 (JSON Patch)
+│           ├── linear.post.ts      # Linear GraphQL API
+│           └── notion.post.ts      # Notion REST API v2022-06-28
+├── drizzle.config.ts
 ├── nuxt.config.ts
 ├── package.json
 ├── tailwind.config.js
 ├── .env.example
 └── .gitignore
 ```
+
+---
+
+## Tech Stack
+
+| Layer               | Tech                                                       |
+| ------------------- | ---------------------------------------------------------- |
+| Frontend + Backend  | Nuxt 4 (server routes / Nitro)                             |
+| AI — analysis       | Anthropic SDK · OpenAI SDK · Google Generative AI SDK      |
+| AI — transcription  | OpenAI Whisper (`whisper-1`) via multipart upload          |
+| Database            | **Turso** (LibSQL / SQLite) — free tier, 9 GB, no infra    |
+| ORM                 | **Drizzle ORM** + drizzle-kit (schema, migrations, studio) |
+| Auth (planned)      | `nuxt-auth-utils` — OAuth (GitHub / Google), Phase 4       |
+| Styling             | CSS custom properties (no UI framework)                    |
+| `.docx` parsing     | mammoth (client-side)                                      |
+| State               | Vue `ref` / `computed`                                     |
 
 ---
 
@@ -181,7 +129,7 @@ meeting-summarizer/
 ### 1. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Configure environment variables
@@ -190,15 +138,38 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` with your API key(s). You only need one AI provider to get started.
+Edit `.env` with your API key(s):
+
+```env
+# At least one AI provider is required
+GEMINI_API_KEY=AIza...          # Recommended — generous free tier, no credit card
+
+# Database — leave blank in development (uses a local ./data/minutai.db file)
+TURSO_DB_URL=                   # libsql://your-db.turso.io  (production)
+TURSO_AUTH_TOKEN=               # Turso auth token           (production)
+
+# Session encryption — required (min 32 chars)
+# Generate with: openssl rand -base64 32
+NUXT_SESSION_PASSWORD=
+```
 
 ### 3. Run in development
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
+The server will **automatically create `./data/minutai.db`** and run migrations on first boot. No manual database setup needed for local development.
+
 Open [http://localhost:3000](http://localhost:3000)
+
+### 4. Database scripts
+
+```bash
+pnpm db:generate   # Generate a new migration after schema changes
+pnpm db:migrate    # Apply pending migrations manually
+pnpm db:studio     # Open Drizzle Studio to browse data
+```
 
 ---
 
@@ -209,6 +180,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | Anthropic     | [console.anthropic.com](https://console.anthropic.com)               | ~$5 credits on sign-up                   |
 | OpenAI        | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | ~$5 credits for 3 months                 |
 | Google Gemini | [aistudio.google.com/apikey](https://aistudio.google.com/apikey)     | **Generous free tier, no credit card** ✓ |
+| Turso         | [turso.tech](https://turso.tech)                                     | **Free — 9 GB, 500 DBs, 1B reads/month** |
 
 > **Recommendation:** Start with Gemini — it has the most generous free tier and requires no credit card.
 
@@ -228,7 +200,7 @@ Open [http://localhost:3000](http://localhost:3000)
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────-──┐
 │                    Browser (Vue)                     │
 │                                                      │
 │  pages/index.vue        pages/dashboard.vue          │
@@ -238,41 +210,67 @@ Open [http://localhost:3000](http://localhost:3000)
 │    useSummarizer.ts   useCompare.ts                  │
 │    useTranscribe.ts   useCalendar.ts                 │
 │    useIntegrations.ts useHistory.ts                  │
-└────────────┬──────────────────────┬──────────────────┘
-             │                      │
-     POST /api/summarize    POST /api/compare
-     POST /api/transcribe   POST /api/integrations/*
-             │                      │
-             ▼                      ▼
-┌─────────────────────────────────────────────────────┐
-│                  Nuxt Server Routes                  │
-│                                                      │
-│  summarize.post.ts   — streams SSE to client         │
-│  compare.post.ts     — Promise.allSettled, 2 providers│
-│  transcribe.post.ts  — multipart → Whisper API       │
-│  integrations/       — proxies to external APIs      │
-│    jira · azure · linear · notion                    │
-└──────┬──────────┬──────────┬───────────┬─────────────┘
-       │          │          │           │
-       ▼          ▼          ▼           ▼
-  Anthropic    OpenAI    Gemini     Jira / Azure /
-  Claude       GPT-4o    Gemini     Linear / Notion
-  Haiku        mini      2.5-flash  Whisper
+└────────────┬────────────────────────┬────────────────┘
+             │                        │
+     AI + History APIs        Integration APIs
+     POST /api/summarize       POST /api/integrations/*
+     GET  /api/history         GET|PUT /api/integrations/config
+     POST /api/history
+             │                        │
+             ▼                        ▼
+┌──────────────────────────────────────────────--───────-┐
+│                  Nuxt Server / Nitro                   │
+│                                                        │
+│  summarize.post.ts   — streams SSE to client           │
+│  compare.post.ts     — Promise.allSettled, 2 providers │
+│  transcribe.post.ts  — multipart → Whisper API         │
+│  history/            — CRUD via Drizzle ORM            │
+│  integrations/       — config CRUD + API proxies       │
+│    config · jira · azure · linear · notion             │
+│                                                        │
+│  plugins/migrate.ts  — runs DB migrations on boot      │
+│  utils/db.ts         — Drizzle + LibSQL singleton      │
+└──────┬──────────────────────────────────────────────--─┘
+       │
+       ├──► Anthropic Claude · OpenAI GPT-4o · Gemini
+       ├──► OpenAI Whisper
+       ├──► Turso (LibSQL / SQLite) ──── meetings
+       │                            ──── integrations_config
+       │                            ──── users (reserved for auth)
+       └──► Jira · Azure Boards · Linear · Notion
 ```
+
+---
+
+## Roadmap
+
+- [x] Multi-provider AI analysis (Claude, GPT-4o, Gemini)
+- [x] Compare mode (side-by-side diff)
+- [x] Audio/video transcription (Whisper)
+- [x] Free notes mode
+- [x] Inline editing
+- [x] Export (Markdown, email)
+- [x] Calendar deep-links
+- [x] Integrations (Jira, Azure, Linear, Notion)
+- [x] Dashboard with aggregate metrics
+- [x] Server-side persistence (Turso + Drizzle ORM)
+- [ ] OAuth authentication (GitHub / Google) via `nuxt-auth-utils` — Phase 4
+- [ ] Per-user data isolation after login
+- [ ] Direct action item creation from the result UI (post-auth)
 
 ---
 
 ## Deployment
 
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
 
-Supports deployment to Vercel, Railway, or any Node.js host with SSR support.
+Supports deployment to **Vercel**, **Railway**, or any Node.js host with SSR support.
 
-> **Note:** Integration API calls (Jira, Azure, Linear, Notion) are proxied through the Nuxt server to avoid CORS issues. Ensure your deployment environment has outbound network access to the respective external APIs.
+For production, set `TURSO_DB_URL` and `TURSO_AUTH_TOKEN` in your environment to use a hosted Turso database instead of the local SQLite fallback.
 
 ---
 
-_Built as a portfolio demo — Nuxt 4 + AI APIs_
+_Built as a portfolio demo — Nuxt 4 + AI APIs + Turso + Drizzle_

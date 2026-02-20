@@ -2,13 +2,7 @@
 // Creates pages in a Notion database from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-
-interface IActionItem {
-    task: string;
-    owner: string;
-    deadline: string;
-    priority: 'high' | 'medium' | 'low';
-}
+import type { IActionItem } from '~/types/index';
 
 const PRIORITY_COLORS: Record<string, string> = {
     high: 'red',

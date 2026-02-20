@@ -8,6 +8,9 @@
         "build": "nuxt build",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:studio": "drizzle-kit studio",
         "lint": "eslint .",
         "lint:fix": "eslint --fix .",
         "lint:css": "stylelint '**/*.{css,vue}'",
@@ -17,14 +20,18 @@
     "dependencies": {
         "@anthropic-ai/sdk": "^0.27.0",
         "@google/generative-ai": "^0.21.0",
+        "@libsql/client": "^0.17.0",
+        "drizzle-orm": "^0.45.1",
         "mammoth": "^1.7.2",
         "nuxt": "^4.0.0",
+        "nuxt-auth-utils": "^0.5.29",
         "openai": "^4.67.0"
     },
     "devDependencies": {
         "@eslint/js": "^9.15.0",
         "@nuxtjs/tailwindcss": "^6.12.1",
         "@typescript-eslint/parser": "^8.14.0",
+        "drizzle-kit": "^0.31.9",
         "eslint": "^9.15.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^50.5.0",

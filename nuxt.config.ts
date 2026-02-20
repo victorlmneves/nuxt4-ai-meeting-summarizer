@@ -7,7 +7,7 @@ export default defineNuxtConfig({
         compatibilityVersion: 4,
     },
 
-    modules: ['@nuxtjs/tailwindcss'],
+    modules: ['@nuxtjs/tailwindcss', 'nuxt-auth-utils'],
 
     devtools: { enabled: true },
 
@@ -20,5 +20,15 @@ export default defineNuxtConfig({
         anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
         openaiApiKey: process.env.OPENAI_API_KEY || '',
         geminiApiKey: process.env.GEMINI_API_KEY || '',
+
+        // Turso (LibSQL) — falls back to a local SQLite file in development
+        tursoDbUrl: process.env.TURSO_DB_URL || '',
+        tursoAuthToken: process.env.TURSO_AUTH_TOKEN || '',
+
+        // nuxt-auth-utils session secret (min 32 chars)
+        // Set NUXT_SESSION_PASSWORD in .env for production
+        session: {
+            password: process.env.NUXT_SESSION_PASSWORD || '',
+        },
     },
 });

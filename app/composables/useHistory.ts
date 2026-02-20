@@ -1,74 +1,147 @@
-import type { TProvider, IMeetingSummary } from './useSummarizer';
+import type { IHistoryEntry, IHistoryPage, IMeetingSummary } from '~/types/index';
 
-export interface IHistoryEntry {
-    id: string;
-    date: string; // ISO string
-    meetingType: string;
-    provider: TProvider;
-    charCount: number;
-    summary: IMeetingSummary;
-    transcript: string;
-    mode: 'single' | 'compare';
-}
+// Re-export so existing imports from this composable keep working
+export type { IHistoryEntry } from '~/types/index';
 
-const HISTORY_KEY = 'minutai:history';
-
-export const MAX_HISTORY = 20;
+const LEGACY_KEY = 'minutai:history';
 
 export function useHistory() {
     const history = ref<IHistoryEntry[]>([]);
+    const total = ref(0);
+    const page = ref(1);
+    const limit = ref(20);
+    const loading = ref(false);
+    const error = ref<string | null>(null);
 
-    function load() {
+    // ── Fetch ─────────────────────────────────────────────────────────────────
+
+    async function load(p = 1) {
+        loading.value = true;
+        error.value = null;
+
         try {
-            const raw = localStorage.getItem(HISTORY_KEY);
+            const data: IHistoryPage = await $fetch(`/api/history?page=${p}&limit=${limit.value}`);
 
-            history.value = raw ? JSON.parse(raw) : [];
-        } catch {
-            history.value = [];
+            history.value = data.data;
+            total.value = data.total;
+            page.value = data.page;
+        } catch (err: any) {
+            error.value = err?.data?.message ?? err.message ?? 'Failed to load history.';
+        } finally {
+            loading.value = false;
         }
     }
 
-    function persist() {
+    async function loadMore() {
+        if (history.value.length >= total.value) {
+            return;
+        }
+
+        loading.value = true;
+
         try {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history.value));
-        } catch(err) {
-            /* quota exceeded */
-            console.warn('Local storage quota exceeded. History not saved.', err);
+            const nextPage = page.value + 1;
+            const data: IHistoryPage = await $fetch(`/api/history?page=${nextPage}&limit=${limit.value}`);
+
+            history.value = [...history.value, ...data.data];
+            total.value = data.total;
+            page.value = data.page;
+        } catch (err: any) {
+            error.value = err?.data?.message ?? err.message ?? 'Failed to load more history.';
+        } finally {
+            loading.value = false;
         }
     }
 
-    function add(summary: IMeetingSummary, transcript: string, provider: TProvider, mode: 'single' | 'compare' = 'single'): string {
-        const entry: IHistoryEntry = {
-            id: Date.now().toString(),
-            date: new Date().toISOString(),
-            meetingType: summary.meetingType,
-            provider,
-            charCount: transcript.length,
-            summary,
-            transcript,
-            mode,
-        };
+    // ── Mutations ─────────────────────────────────────────────────────────────
+
+    async function add(
+        summary: IMeetingSummary,
+        transcript: string,
+        provider: IHistoryEntry['provider'],
+        mode: 'single' | 'compare' = 'single'
+    ): Promise<string> {
+        const entry: IHistoryEntry = await $fetch('/api/history', {
+            method: 'POST',
+            body: { summary, transcript, provider, mode },
+        });
 
         history.value.unshift(entry);
-
-        if (history.value.length > MAX_HISTORY) {
-            history.value = history.value.slice(0, MAX_HISTORY);
-        }
-
-        persist();
+        total.value++;
 
         return entry.id;
     }
 
-    function remove(id: string) {
-        history.value = history.value.filter((e: IHistoryEntry) => e.id !== id);
-        persist();
+    async function update(id: string, summary: IMeetingSummary) {
+        await $fetch(`/api/history/${id}`, {
+            method: 'PATCH',
+            body: { summary },
+        });
+
+        const idx = history.value.findIndex((e) => e.id === id);
+
+        if (idx !== -1) {
+            history.value[idx] = {
+                ...history.value[idx],
+                summary,
+                meetingType: summary.meetingType,
+            } as IHistoryEntry;
+        }
     }
 
-    function clear() {
-        history.value = [];
-        localStorage.removeItem(HISTORY_KEY);
+    async function remove(id: string) {
+        await $fetch(`/api/history/${id}`, { method: 'DELETE' });
+        history.value = history.value.filter((e) => e.id !== id);
+        total.value = Math.max(0, total.value - 1);
     }
+
+    async function clear() {
+        const ids = history.value.map((e) => e.id);
+
+        await Promise.all(ids.map((id) => $fetch(`/api/history/${id}`, { method: 'DELETE' })));
+        history.value = [];
+        total.value = 0;
+    }
+
+    // ── One-time localStorage migration ───────────────────────────────────────
+    // Runs on first load if legacy data exists in localStorage.
+    // Removes the localStorage key after a successful migration.
+
+    async function migrateFromLocalStorage() {
+        if (typeof localStorage === 'undefined') {
+            return;
+        }
+
+        const raw = localStorage.getItem(LEGACY_KEY);
+
+        if (!raw) {
+            return;
+        }
+
+        try {
+            const entries: IHistoryEntry[] = JSON.parse(raw);
+
+            if (!entries.length) {
+                localStorage.removeItem(LEGACY_KEY);
+
+                return;
+            }
+
+            await $fetch('/api/history/bulk', {
+                method: 'POST',
+                body: { entries },
+            });
+
+            localStorage.removeItem(LEGACY_KEY);
+            await load(1);
+
+            console.log('[useHistory] Migrated', entries.length, 'entries from localStorage.');
+        } catch (err) {
+            console.warn('[useHistory] localStorage migration failed:', err);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     function formatDate(iso: string) {
         return new Date(iso).toLocaleDateString('en-GB', {
@@ -80,5 +153,23 @@ export function useHistory() {
         });
     }
 
-    return { history, load, add, remove, clear, formatDate };
+    const hasMore = computed(() => history.value.length < total.value);
+
+    return {
+        history,
+        total,
+        page,
+        limit,
+        loading,
+        error,
+        hasMore,
+        load,
+        loadMore,
+        add,
+        update,
+        remove,
+        clear,
+        migrateFromLocalStorage,
+        formatDate,
+    };
 }

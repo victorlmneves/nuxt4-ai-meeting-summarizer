@@ -2,13 +2,7 @@
 // Creates issues in a Linear team from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-
-interface IActionItem {
-    task: string;
-    owner: string;
-    deadline: string;
-    priority: 'high' | 'medium' | 'low';
-}
+import type { IActionItem } from '~/types/index';
 
 // Linear priority: 0=No priority, 1=Urgent, 2=High, 3=Medium, 4=Low
 const PRIORITY_MAP: Record<string, number> = {
@@ -77,8 +71,8 @@ export default defineEventHandler(async (event: H3Event) => {
             } else {
                 results.push({ task: item.task, url: data.data.issueCreate.issue.url, error: null });
             }
-        } catch (err: any) {
-            results.push({ task: item.task, url: null, error: err.message });
+        } catch (err: unknown) {
+            results.push({ task: item.task, url: null, error: err instanceof Error ? err.message : 'Unknown error' });
         }
     }
 

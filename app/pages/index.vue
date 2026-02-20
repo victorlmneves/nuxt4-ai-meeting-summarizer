@@ -1,16 +1,6 @@
 <script setup lang="ts">
 import type { TProvider, IMeetingSummary, TInputType } from '~/composables/useSummarizer';
-
-interface IHistoryEntry {
-    id: string;
-    date: string;
-    meetingType: string;
-    provider: TProvider;
-    charCount: number;
-    summary: IMeetingSummary;
-    transcript: string;
-    mode: 'single' | 'compare';
-}
+import type { IHistoryEntry } from '~/types/index';
 
 const { summarize, result, loading, error, progress, reset } = useSummarizer();
 const { compare, results: compareResults, loading: compareLoading, error: compareError, reset: compareReset, isError } = useCompare();
@@ -32,8 +22,20 @@ const {
     loadConfig: loadIntegrations,
 } = useIntegrations();
 const { getLinks, openAllInCalendar, itemsWithDeadlines } = useCalendar();
-
-onMounted(loadIntegrations);
+const {
+    history,
+    total: historyTotal,
+    loading: historyLoading,
+    hasMore: historyHasMore,
+    load: historyLoad,
+    loadMore: historyLoadMore,
+    add: historyAdd,
+    update: historyUpdate,
+    remove: historyRemove,
+    clear: historyClear,
+    migrateFromLocalStorage,
+    formatDate,
+} = useHistory();
 
 // ── Mode ──────────────────────────────────────────────────────────────────────
 const mode = ref<'single' | 'compare'>('single');
@@ -94,8 +96,13 @@ function saveEdits() {
         if (idx !== -1) {
             history.value[idx].summary = { ...draft.value };
             history.value[idx].meetingType = draft.value.meetingType;
-            // eslint-disable-next-line
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history.value));
+        }
+
+        // Persist the edit to the server
+        if (activeHistoryId.value) {
+            historyUpdate(activeHistoryId.value, draft.value).catch((err: any) => {
+                console.warn('[saveEdits] Failed to persist edit:', err);
+            });
         }
     }
 
@@ -140,68 +147,17 @@ const isLoading = computed(() => loading.value || compareLoading.value || transc
 const activeError = computed(() => error.value || compareError.value || transcribeError.value);
 const hasResult = computed(() => !!result.value || !!compareResults.value);
 
-// ── History (localStorage) ────────────────────────────────────────────────────
-const HISTORY_KEY = 'minutai:history';
-const MAX_HISTORY = 20;
-
-const history = ref<IHistoryEntry[]>([]);
+// ── History ───────────────────────────────────────────────────────────────────
 const activeHistoryId = ref<string | null>(null);
 
-function loadHistory() {
-    try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-
-        history.value = raw ? JSON.parse(raw) : [];
-    } catch {
-        history.value = [];
-    }
-}
-
-function saveToHistory(summary: IMeetingSummary, transcript: string, prov: TProvider): string {
-    const entry: IHistoryEntry = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        meetingType: summary.meetingType,
-        provider: prov,
-        charCount: transcript.length,
-        summary,
-        transcript,
-        mode: 'single',
-    };
-
-    history.value.unshift(entry);
-
-    if (history.value.length > MAX_HISTORY) {
-        history.value = history.value.slice(0, MAX_HISTORY);
-    }
-
-    try {
-        // eslint-disable-next-line
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.value));
-    } catch (err) {
-        /* quota */
-        console.warn('LocalStorage quota exceeded:', err);
-    }
-
-    return entry.id;
-}
-
-function deleteHistoryEntry(id: string) {
-    history.value = history.value.filter((e: { id: string; }) => e.id !== id);
-    // eslint-disable-next-line
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.value));
+async function onDeleteHistoryEntry(id: string) {
+    await historyRemove(id);
 
     if (activeHistoryId.value === id) {
         activeHistoryId.value = null;
         reset();
         submittedText.value = '';
     }
-}
-
-function clearHistory() {
-    history.value = [];
-    localStorage.removeItem(HISTORY_KEY);
-    activeHistoryId.value = null;
 }
 
 function openHistoryEntry(entry: IHistoryEntry) {
@@ -217,17 +173,11 @@ function openHistoryEntry(entry: IHistoryEntry) {
     });
 }
 
-function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
-
-onMounted(loadHistory);
+onMounted(async () => {
+    loadIntegrations();
+    await migrateFromLocalStorage();
+    await historyLoad();
+});
 
 // ── File parsers ──────────────────────────────────────────────────────────────
 function parseVtt(raw: string): string {
@@ -409,7 +359,7 @@ async function handleSubmit() {
         await summarize(transcriptText.value, provider.value, inputType.value);
 
         if (result.value) {
-            activeHistoryId.value = saveToHistory(result.value, submittedText.value, provider.value);
+            activeHistoryId.value = await historyAdd(result.value, submittedText.value, provider.value);
         }
     } else {
         await compare(transcriptText.value, compareProviders.value);
@@ -592,7 +542,7 @@ function valuesDiffer(a: any, b: any): boolean {
                 <div class="sidebar-header">
                     <h2 class="sidebar-title">History</h2>
                     <div class="sidebar-actions">
-                        <button v-if="history.length" class="sidebar-clear" @click="clearHistory">Clear all</button>
+                        <button v-if="history.length" class="sidebar-clear" @click="historyClear">Clear all</button>
                         <button class="sidebar-close" @click="historyOpen = false">✕</button>
                     </div>
                 </div>
@@ -606,7 +556,7 @@ function valuesDiffer(a: any, b: any): boolean {
                     >
                         <div class="history-item-main">
                             <span class="history-meeting-type">{{ entry.meetingType }}</span>
-                            <button class="history-delete" @click.stop="deleteHistoryEntry(entry.id)">✕</button>
+                            <button class="history-delete" @click.stop="onDeleteHistoryEntry(entry.id)">✕</button>
                         </div>
                         <div class="history-item-meta">
                             <span class="history-date">{{ formatDate(entry.date) }}</span>
@@ -619,6 +569,11 @@ function valuesDiffer(a: any, b: any): boolean {
                         </div>
                     </li>
                 </ul>
+                <div v-if="historyHasMore" class="sidebar-load-more">
+                    <button class="load-more-btn" :disabled="historyLoading" @click="historyLoadMore">
+                        {{ historyLoading ? 'Loading…' : 'Load more' }}
+                    </button>
+                </div>
             </aside>
         </Transition>
         <Transition name="fade">
@@ -647,7 +602,7 @@ function valuesDiffer(a: any, b: any): boolean {
                     <button class="history-btn" @click="historyOpen = true">
                         <span class="history-btn-icon">◷</span>
                         History
-                        <span v-if="history.length" class="history-count">{{ history.length }}</span>
+                        <span v-if="historyTotal" class="history-count">{{ historyTotal }}</span>
                     </button>
 
                     <!-- Mode toggle -->

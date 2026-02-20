@@ -1,4 +1,4 @@
-import type { IMeetingSummary } from './useSummarizer';
+import type { IMeetingSummary, IIntegrationsConfig } from '~/types/index';
 
 export type TIntegrationId = 'jira' | 'linear' | 'notion' | 'azure';
 
@@ -14,20 +14,57 @@ export interface ISendStatus {
     error: string | null;
 }
 
-const STORAGE_KEY = 'minutai:integrations';
+// Kept for fallback/legacy purposes during the transition period
+const LEGACY_KEY = 'minutai:integrations';
 
 export function useIntegrations() {
-    // ── Read config from localStorage ──────────────────────────────────────────
-    const config = ref<any>(null);
+    // ── Read config from server (with localStorage fallback) ──────────────────
+    const config = ref<Partial<IIntegrationsConfig> | null>(null);
 
-    function loadConfig() {
+    async function loadConfig() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
+            const serverConfig = await $fetch<Partial<IIntegrationsConfig>>('/api/integrations/config');
 
-            config.value = raw ? JSON.parse(raw) : null;
+            // If the server has no config yet, fall back to localStorage (migration path)
+            if (!serverConfig || Object.keys(serverConfig).length === 0) {
+                const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(LEGACY_KEY) : null;
+
+                if (raw) {
+                    const legacyConfig: Partial<IIntegrationsConfig> = JSON.parse(raw);
+
+                    // Persist legacy config to server and clear localStorage
+                    await $fetch('/api/integrations/config', {
+                        method: 'PUT',
+                        body: legacyConfig,
+                    });
+
+                    localStorage.removeItem(LEGACY_KEY);
+                    config.value = legacyConfig;
+
+                    return;
+                }
+            }
+
+            config.value = serverConfig;
         } catch {
-            config.value = null;
+            // Graceful fallback to localStorage if server is unreachable
+            try {
+                const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(LEGACY_KEY) : null;
+
+                config.value = raw ? JSON.parse(raw) : null;
+            } catch {
+                config.value = null;
+            }
         }
+    }
+
+    async function saveConfig(newConfig: Partial<IIntegrationsConfig>) {
+        config.value = newConfig;
+
+        await $fetch('/api/integrations/config', {
+            method: 'PUT',
+            body: newConfig,
+        });
     }
 
     // Which integrations are configured and enabled
@@ -121,7 +158,7 @@ export function useIntegrations() {
         notion: { label: 'Notion', logo: 'N', logoClass: 'notion-logo' },
     };
 
-    onMounted(loadConfig);
+    onMounted(() => loadConfig());
 
     return {
         config,
@@ -132,5 +169,6 @@ export function useIntegrations() {
         resetStatus,
         integrationMeta,
         loadConfig,
+        saveConfig,
     };
 }

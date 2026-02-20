@@ -1,34 +1,15 @@
 <script setup lang="ts">
+import type { IHistoryEntry } from '~/types/index';
 import type { TProvider, IMeetingSummary } from '~/composables/useSummarizer';
 
-// ── Types (mirrored from index.vue) ──────────────────────────────────────────
-interface IHistoryEntry {
-    id: string;
-    date: string;
-    meetingType: string;
-    provider: TProvider;
-    charCount: number;
-    summary: IMeetingSummary;
-    transcript: string;
-    mode: 'single' | 'compare';
-}
-
 // ── Load history ──────────────────────────────────────────────────────────────
-const HISTORY_KEY = 'minutai:history';
-const history = ref<IHistoryEntry[]>([]);
+const { history, total: historyTotal, load: historyLoad } = useHistory();
 
-onMounted(() => {
-    try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-
-        history.value = raw ? JSON.parse(raw) : [];
-    } catch {
-        history.value = [];
-    }
-});
+onMounted(() => historyLoad());
 
 // ── Computed metrics ──────────────────────────────────────────────────────────
-const totalMeetings = computed(() => history.value.length);
+// historyTotal reflects the full count from the server, not just the loaded page
+const totalMeetings = computed(() => historyTotal.value);
 const totalActionItems = computed(() => history.value.reduce((sum: number, e: IHistoryEntry) => sum + e.summary.actionItems.length, 0));
 const totalDecisions = computed(() => history.value.reduce((sum: number, e: IHistoryEntry) => sum + e.summary.decisions.length, 0));
 const totalParticipants = computed(() => {
