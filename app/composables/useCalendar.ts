@@ -186,10 +186,6 @@ function toOutlookDate(date: Date): string {
 // ── Link builders ─────────────────────────────────────────────────────────────
 function googleCalendarLink(item: IActionItem, meetingType: string): string {
     const date = parseDeadline(item.deadline);
-    const title = encodeURIComponent(item.task);
-    const details = encodeURIComponent(
-        `Owner: ${item.owner}\nPriority: ${item.priority}\nDeadline: ${item.deadline}\n\nCreated by MinutAI from ${meetingType}.`
-    );
 
     const params = new URLSearchParams({
         action: 'TEMPLATE',

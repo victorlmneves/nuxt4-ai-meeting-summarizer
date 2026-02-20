@@ -64,7 +64,7 @@ export function useHistory() {
         provider: IHistoryEntry['provider'],
         mode: 'single' | 'compare' = 'single'
     ): Promise<string> {
-        const entry: IHistoryEntry = await $fetch('/api/history', {
+        const entry = await $fetch<IHistoryEntry>('/api/history', {
             method: 'POST',
             body: { summary, transcript, provider, mode },
         });
@@ -144,17 +144,6 @@ export function useHistory() {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    function formatDate(iso: string) {
-        return new Date(iso).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    }
-
     const hasMore = computed(() => history.value.length < total.value);
 
     return {
@@ -172,6 +161,5 @@ export function useHistory() {
         remove,
         clear,
         migrateFromLocalStorage,
-        formatDate,
     };
 }

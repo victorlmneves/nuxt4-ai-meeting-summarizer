@@ -3,7 +3,7 @@
 // Returns an empty object if no config is found (not an error).
 
 import { defineEventHandler } from 'h3';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { integrationsConfig } from '#server/db/schema';
 import type { IIntegrationsConfig } from '~/types/index';

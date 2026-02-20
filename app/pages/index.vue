@@ -11,7 +11,6 @@ const {
     error: transcribeError,
     uploadProgress,
     reset: transcribeReset,
-    formatTime,
 } = useTranscribe();
 const {
     enabledIntegrations,
@@ -34,7 +33,6 @@ const {
     remove: historyRemove,
     clear: historyClear,
     migrateFromLocalStorage,
-    formatDate,
 } = useHistory();
 
 // ── Mode ──────────────────────────────────────────────────────────────────────
@@ -559,7 +557,7 @@ function valuesDiffer(a: any, b: any): boolean {
                             <button class="history-delete" @click.stop="onDeleteHistoryEntry(entry.id)">✕</button>
                         </div>
                         <div class="history-item-meta">
-                            <span class="history-date">{{ formatDate(entry.date) }}</span>
+                            <span class="history-date">{{ formatDate(entry.date, true) }}</span>
                             <span class="history-provider">{{ providerName(entry.provider) }}</span>
                         </div>
                         <div class="history-item-stats">

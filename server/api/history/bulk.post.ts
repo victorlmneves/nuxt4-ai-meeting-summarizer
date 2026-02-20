@@ -3,7 +3,6 @@
 // and inserts them into the database, skipping any that already exist (by id).
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-import { sql } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { meetings } from '#server/db/schema';
 import type { IHistoryEntry } from '~/types/index';

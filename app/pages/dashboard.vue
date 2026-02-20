@@ -145,14 +145,6 @@ const providerColors: Record<TProvider, string> = {
     openai: '#3dffa0',
 };
 
-function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
-}
-
 function formatRelative(iso: string) {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
