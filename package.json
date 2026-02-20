@@ -1,0 +1,42 @@
+{
+    "name": "nuxt-4-ai-meeting-summarizer",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "nuxt dev",
+        "build": "nuxt build",
+        "generate": "nuxt generate",
+        "preview": "nuxt preview",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix .",
+        "lint:css": "stylelint '**/*.{css,vue}'",
+        "lint:css:fix": "stylelint '**/*.{css,vue}' --fix",
+        "format": "prettier --write '**/*.{ts,vue,js,json}' && stylelint '**/*.{css,vue}' --fix && eslint --fix '**/*.{ts,vue,js}'"
+    },
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.27.0",
+        "@google/generative-ai": "^0.21.0",
+        "mammoth": "^1.7.2",
+        "nuxt": "^4.0.0",
+        "openai": "^4.67.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.15.0",
+        "@nuxtjs/tailwindcss": "^6.12.1",
+        "@typescript-eslint/parser": "^8.14.0",
+        "eslint": "^9.15.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-jsdoc": "^50.5.0",
+        "eslint-plugin-jsonc": "^2.18.2",
+        "eslint-plugin-regexp": "^2.7.0",
+        "eslint-plugin-vue": "^9.30.0",
+        "globals": "^15.12.0",
+        "prettier": "^3.3.3",
+        "stylelint": "^16.10.0",
+        "stylelint-config-recommended-vue": "^1.6.0",
+        "stylelint-config-standard": "^36.0.1",
+        "typescript-eslint": "^8.14.0",
+        "vue-eslint-parser": "^9.4.3"
+    }
+}

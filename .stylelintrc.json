@@ -1,0 +1,32 @@
+{
+    "extends": [
+        "stylelint-config-standard",
+        "stylelint-config-recommended-vue"
+    ],
+    "rules": {
+        "rule-empty-line-before": [
+            "always",
+            {
+                "except": ["first-nested"],
+                "ignore": ["after-comment"]
+            }
+        ],
+        "at-rule-empty-line-before": [
+            "always",
+            {
+                "except": ["first-nested"],
+                "ignore": ["after-comment", "blockless-after-same-name-blockless"]
+            }
+        ],
+        "comment-empty-line-before": [
+            "always",
+            {
+                "except": ["first-nested"],
+                "ignore": ["stylelint-commands"]
+            }
+        ],
+        "selector-class-pattern": null,
+        "custom-property-pattern": null,
+        "no-descending-specificity": null
+    }
+}
