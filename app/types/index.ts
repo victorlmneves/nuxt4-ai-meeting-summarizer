@@ -54,6 +54,7 @@ export interface IJiraConfig {
     email: string;
     apiToken: string;
     projectKey: string; // e.g. ENG
+    issueType?: string; // e.g. Task, Bug, Story
 }
 
 export interface ILinearConfig {

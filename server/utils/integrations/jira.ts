@@ -3,14 +3,7 @@
  * Creates issues in Jira from action items
  */
 
-export interface IJiraConfig {
-    enabled: boolean;
-    baseUrl: string;
-    email: string;
-    apiToken: string;
-    projectKey: string;
-    issueType?: string;
-}
+import type { IJiraConfig } from '~/types';
 
 export interface IJiraCreateResult {
     id: string;

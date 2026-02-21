@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { TProvider, IMeetingSummary, TInputType } from '~/composables/useSummarizer';
-import type { IHistoryEntry } from '~/types/index';
+import type { TProvider, IMeetingSummary, TInputType, IHistoryEntry } from '~/types/index';
 
 const { summarize, result, loading, error, progress, reset } = useSummarizer();
 const { compare, results: compareResults, loading: compareLoading, error: compareError, reset: compareReset, isError } = useCompare();

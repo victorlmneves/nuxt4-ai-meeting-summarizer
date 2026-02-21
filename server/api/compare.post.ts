@@ -2,8 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-
-type TProvider = 'anthropic' | 'openai' | 'gemini';
+import type { TProvider } from '~/types';
 
 const SYSTEM_PROMPT = `You are an expert meeting analyst. Analyze the provided meeting transcript and extract structured information.
 

@@ -1,29 +1,4 @@
-// Types for the structured meeting analysis response
-export type TProvider = 'anthropic' | 'openai' | 'gemini';
-export type TInputType = 'transcript' | 'free-notes';
-export type TPriority = 'high' | 'medium' | 'low';
-
-export interface IActionItem {
-    task: string;
-    owner: string;
-    deadline: string;
-    priority: TPriority;
-}
-
-export interface IDecision {
-    decision: string;
-    rationale: string;
-    madeBy: string;
-}
-
-export interface IMeetingSummary {
-    summary: string;
-    actionItems: IActionItem[];
-    decisions: IDecision[];
-    participants: string[];
-    meetingType: string;
-    keyTopics: string[];
-}
+import type { TProvider, TInputType, IMeetingSummary } from '~/types';
 
 export function useSummarizer() {
     const result = ref<IMeetingSummary | null>(null);

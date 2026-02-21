@@ -3,32 +3,26 @@
  * Creates work items in Azure DevOps from action items
  */
 
-export interface AzureConfig {
-    enabled: boolean;
-    organization: string;
-    project: string;
-    pat: string; // Personal Access Token
-    workItemType?: string;
-}
+import type { IAzureConfig } from '~/types';
 
-export interface AzureCreateResult {
+export interface IAzureCreateResult {
     id: string;
     url: string;
 }
 
 /**
  * Create an Azure DevOps work item from an action item
- * @param {AzureConfig} config - The Azure DevOps configuration
+ * @param {IAzureConfig} config - The Azure DevOps configuration
  * @param {object} item - The action item to create
  * @param {string} item.title - The title of the work item
  * @param {string} [item.description] - The description of the work item
  * @param {string} [item.assignee] - The assignee for the work item
  * @param {string} [item.dueDate] - The due date for the work item
  * @param {string} [item.priority] - The priority level of the work item
- * @returns {Promise<AzureCreateResult>} The created work item with id and url
+ * @returns {Promise<IAzureCreateResult>} The created work item with id and url
  */
 export async function createAzureWorkItem(
-    config: AzureConfig,
+    config: IAzureConfig,
     item: {
         title: string;
         description?: string;
@@ -36,7 +30,7 @@ export async function createAzureWorkItem(
         dueDate?: string;
         priority?: string;
     }
-): Promise<AzureCreateResult> {
+): Promise<IAzureCreateResult> {
     if (!config.enabled || !config.organization || !config.project || !config.pat) {
         throw new Error('Azure DevOps is not properly configured');
     }
@@ -103,12 +97,12 @@ export async function createAzureWorkItem(
 
 /**
  * Update Azure DevOps work item state
- * @param {AzureConfig} config - The Azure DevOps configuration
+ * @param {IAzureConfig} config - The Azure DevOps configuration
  * @param {string} workItemId - The ID of the work item to update
  * @param {string} status - The new status for the work item
  */
 export async function updateAzureWorkItemState(
-    config: AzureConfig,
+    config: IAzureConfig,
     workItemId: string,
     status: string
 ): Promise<void> {

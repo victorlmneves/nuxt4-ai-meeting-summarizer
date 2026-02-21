@@ -3,11 +3,7 @@
  * Creates database entries in Notion from action items
  */
 
-export interface INotionConfig {
-    enabled: boolean;
-    integrationToken: string;
-    databaseId: string;
-}
+import type { INotionConfig } from '~/types';
 
 export interface INotionCreateResult {
     id: string;

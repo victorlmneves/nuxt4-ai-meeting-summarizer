@@ -1,38 +1,5 @@
 <script setup lang="ts">
-interface IJiraConfig {
-    enabled: boolean;
-    baseUrl: string; // e.g. https://mycompany.atlassian.net
-    email: string;
-    apiToken: string;
-    projectKey: string; // e.g. ENG
-}
-
-interface ILinearConfig {
-    enabled: boolean;
-    apiKey: string;
-    teamId: string;
-}
-
-interface INotionConfig {
-    enabled: boolean;
-    integrationToken: string;
-    databaseId: string;
-}
-
-interface IAzureConfig {
-    enabled: boolean;
-    organization: string; // e.g. mycompany
-    project: string; // e.g. MyProject
-    pat: string; // Personal Access Token
-    workItemType: string; // Task | Bug | User Story
-}
-
-interface IIntegrationsConfig {
-    jira: IJiraConfig;
-    linear: ILinearConfig;
-    notion: INotionConfig;
-    azure: IAzureConfig;
-}
+import type { IIntegrationsConfig } from '~/types';
 
 const STORAGE_KEY = 'minutai:integrations';
 

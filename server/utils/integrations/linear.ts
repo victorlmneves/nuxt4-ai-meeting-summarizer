@@ -3,11 +3,7 @@
  * Creates issues in Linear from action items
  */
 
-export interface ILinearConfig {
-    enabled: boolean;
-    apiKey: string;
-    teamId: string;
-}
+import type { ILinearConfig } from '~/types';
 
 export interface ILinearCreateResult {
     id: string;

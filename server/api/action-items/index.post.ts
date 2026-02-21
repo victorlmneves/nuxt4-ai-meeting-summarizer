@@ -23,10 +23,6 @@ interface CreateActionItemRequest {
     pushToService?: 'jira' | 'linear' | 'notion' | 'azure';
 }
 
-interface IUser {
-    id: string | null;
-}
-
 export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();
     const user = await getUserSession(event);
@@ -112,13 +108,13 @@ export default defineEventHandler(async (event: H3Event) => {
  * Push action item to external service (Jira, Linear, Notion, Azure DevOps)
  * @param {string} service - The external service name (jira, linear, notion, or azure)
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {IUser} user - The user object with integration credentials
+ * @param {object} user - The user session object with id
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
 async function pushActionItemToService(
     service: string,
     item: CreateActionItemRequest['items'][0],
-    user: IUser
+    user: { id: string | null }
 ): Promise<{ id: string; url: string }> {
     if (service === 'jira') {
         return createJiraActionItem(item, user);
@@ -160,10 +156,10 @@ async function getIntegrationConfig(userId: string | null, service: string) {
 /**
  * Create Jira action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {IUser} user - The user object with integration credentials
+ * @param {object} user - The user session object with id
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
-async function createJiraActionItem(item: CreateActionItemRequest['items'][0], user: IUser) {
+async function createJiraActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
     const config = await getIntegrationConfig(user.id, 'jira');
 
     return createJiraIssue(config, item);
@@ -172,10 +168,10 @@ async function createJiraActionItem(item: CreateActionItemRequest['items'][0], u
 /**
  * Create Linear action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {IUser} user - The user object with integration credentials
+ * @param {object} user - The user session object with id
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
-async function createLinearActionItem(item: CreateActionItemRequest['items'][0], user: IUser) {
+async function createLinearActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
     const config = await getIntegrationConfig(user.id, 'linear');
 
     return createLinearIssue(config, item);
@@ -184,10 +180,10 @@ async function createLinearActionItem(item: CreateActionItemRequest['items'][0],
 /**
  * Create Notion action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {IUser} user - The user object with integration credentials
+ * @param {object} user - The user session object with id
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
-async function createNotionActionItem(item: CreateActionItemRequest['items'][0], user: IUser) {
+async function createNotionActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
     const config = await getIntegrationConfig(user.id, 'notion');
 
     return createNotionItem(config, item);
@@ -196,10 +192,10 @@ async function createNotionActionItem(item: CreateActionItemRequest['items'][0],
 /**
  * Create Azure action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {IUser} user - The user object with integration credentials
+ * @param {object} user - The user session object with id
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
-async function createAzureActionItem(item: CreateActionItemRequest['items'][0], user: IUser) {
+async function createAzureActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
     const config = await getIntegrationConfig(user.id, 'azure');
 
     return createAzureWorkItem(config, item);
