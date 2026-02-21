@@ -18,8 +18,9 @@ export default defineEventHandler(async (event: H3Event) => {
         throw createError({ statusCode: 400, message: 'Request body must be a config object.' });
     }
 
-    // TODO (Phase 4): get userId from getUserSession(event).user.id
-    const userId: string | null = null;
+    // Get userId from session (null if not authenticated)
+    const user = await getUserSession(event);
+    const userId = user?.id || null;
 
     const now = new Date().toISOString();
 

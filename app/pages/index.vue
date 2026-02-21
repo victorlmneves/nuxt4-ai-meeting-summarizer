@@ -609,6 +609,8 @@ function valuesDiffer(a: any, b: any): boolean {
                         <button :class="['mode-btn', mode === 'compare' ? 'active' : '']" @click="switchMode('compare')">⇄ Compare</button>
                     </div>
 
+                    <AuthButton />
+
                     <!-- Provider selector (single mode only) -->
                     <div v-if="mode === 'single'" class="provider-toggle">
                         <button
@@ -1536,7 +1538,7 @@ function valuesDiffer(a: any, b: any): boolean {
 
 .logo-tag {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-muted);
     border: 1px solid var(--border-bright);
     padding: 2px 7px;

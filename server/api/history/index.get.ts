@@ -3,7 +3,7 @@
 // Filtered by userId from session when auth is active (nullable in anonymous mode).
 
 import { defineEventHandler, getQuery, type H3Event } from 'h3';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql, isNull, and } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { meetings } from '#server/db/schema';
 import type { IHistoryEntry } from '~/types/index';
@@ -15,10 +15,12 @@ export default defineEventHandler(async (event: H3Event) => {
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
     const offset = (page - 1) * limit;
 
-    // TODO (Phase 4): filter by getUserSession(event).user.id when auth is active
-    const userId: string | null = null;
+    // Get userId from session (null if not authenticated)
+    const user = await getUserSession(event);
+    const userId = user?.user?.id || null;
 
-    const where = userId ? eq(meetings.userId, userId) : undefined;
+    // Build where clause: filter by userId if authenticated, otherwise return only anonymous meetings
+    const where = userId ? eq(meetings.userId, userId) : isNull(meetings.userId);
 
     const [rows, countRows] = await Promise.all([
         db

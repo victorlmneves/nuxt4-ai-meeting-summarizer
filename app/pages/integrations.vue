@@ -93,6 +93,7 @@ const enabledCount = computed(
                     <NuxtLink to="/" class="nav-link">← Analyze</NuxtLink>
                     <NuxtLink to="/dashboard" class="nav-link">Dashboard</NuxtLink>
                     <span class="nav-active">Integrations</span>
+                    <AuthButton />
                 </nav>
             </div>
         </header>
@@ -427,7 +428,7 @@ const enabledCount = computed(
 
 .logo-tag {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-muted);
     border: 1px solid var(--border-bright);
     padding: 2px 7px;

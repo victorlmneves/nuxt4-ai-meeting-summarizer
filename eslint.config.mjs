@@ -11,8 +11,8 @@ import eslintPluginPrettierRecommended from 'eslint-config-prettier';
 const jsBaseRules = {
     'no-unused-vars': 'error',
     'no-undef': 'error',
-    'curly': ['error', 'all'], // Sempre usar {} em ifs, loops, etc
-    'brace-style': ['error', '1tbs', { allowSingleLine: false }], // Nunca permitir one-liner
+    'curly': ['error', 'all'], // Always use {} in ifs, loops, etc
+    'brace-style': ['error', '1tbs', { allowSingleLine: false }], // Never allow one-liner
     'padding-line-between-statements': [
         'error',
         { blankLine: 'always', prev: '*', next: 'return' }, // Linha em branco antes do return
@@ -20,7 +20,7 @@ const jsBaseRules = {
         { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' }, // Linha após declarações
         { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] }, // Exceto entre declarações
     ],
-    'nonblock-statement-body-position': ['error', 'below'], // Body sempre em nova linha
+    'nonblock-statement-body-position': ['error', 'below'], // Body always in a new line
 };
 
 const jsDocRules = {
@@ -47,6 +47,9 @@ const tsBaseRules = {
         { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
     ],
     'nonblock-statement-body-position': ['error', 'below'],
+    'vue/multi-word-component-names': ['warn', {
+        ignores: ['index']
+    }]
 };
 
 const regExRules = { 'regexp/no-unused-capturing-group': 'off' };

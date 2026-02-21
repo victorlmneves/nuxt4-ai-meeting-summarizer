@@ -190,6 +190,7 @@ function getProviderLabel(provider: string): string {
                     <NuxtLink to="/" class="nav-link">← Analyze</NuxtLink>
                     <NuxtLink to="/integrations" class="nav-link">Integrations</NuxtLink>
                     <span class="nav-active">Dashboard</span>
+                    <AuthButton />
                 </nav>
             </div>
         </header>
@@ -433,7 +434,7 @@ function getProviderLabel(provider: string): string {
 
 .logo-tag {
     font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-muted);
     border: 1px solid var(--border-bright);
     padding: 2px 7px;

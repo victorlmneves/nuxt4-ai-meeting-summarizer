@@ -2,17 +2,18 @@
 // Returns the stored integrations configuration for the current session.
 // Returns an empty object if no config is found (not an error).
 
-import { defineEventHandler } from 'h3';
+import { defineEventHandler, type H3Event } from 'h3';
 import { eq, isNull } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { integrationsConfig } from '#server/db/schema';
 import type { IIntegrationsConfig } from '~/types/index';
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();
 
-    // TODO (Phase 4): get userId from getUserSession(event).user.id
-    const userId: string | null = null;
+    // Get userId from session (null if not authenticated)
+    const user = await getUserSession(event);
+    const userId = user?.id || null;
 
     const rows = await db
         .select()

@@ -15,8 +15,9 @@ export default defineEventHandler(async (event: H3Event) => {
         throw createError({ statusCode: 400, message: 'summary and provider are required.' });
     }
 
-    // TODO (Phase 4): attach getUserSession(event).user.id
-    const userId: string | null = null;
+    // Get userId from session (null if not authenticated)
+    const user = await getUserSession(event);
+    const userId = user?.user?.id || null;
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();

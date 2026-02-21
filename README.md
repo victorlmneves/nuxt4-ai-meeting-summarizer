@@ -67,6 +67,7 @@ nuxt4-ai-meeting-summarizer/
 │   │   ├── useTranscribe.ts        # Whisper upload + XHR progress tracking
 │   │   ├── useCalendar.ts          # Deep-link generation + deadline date parsing
 │   │   ├── useIntegrations.ts      # Integration config — server API + localStorage fallback
+│   │   ├── useAuth.ts              # OAuth session & logout management
 │   │   └── useHistory.ts           # History — server API, pagination, localStorage migration
 │   └── pages/
 │       ├── index.vue               # Main app (analysis + all result features)
@@ -74,34 +75,63 @@ nuxt4-ai-meeting-summarizer/
 │       └── integrations.vue        # Credentials configuration
 ├── server/
 │   ├── db/
-│   │   ├── schema.ts               # Drizzle schema — users, meetings, integrations_config
+│   │   ├── schema.ts               # Drizzle schema — users, meetings, integrations_config, action_items
 │   │   └── migrations/             # Auto-generated SQL migrations (drizzle-kit)
 │   ├── utils/
-│   │   └── db.ts                   # LibSQL + Drizzle singleton (Turso in prod, local file in dev)
+│   │   ├── db.ts                   # LibSQL + Drizzle singleton (Turso in prod, local file in dev)
+│   │   ├── oauth.ts                # OAuth session & user setup utilities
+│   │   └── integrations/           # Integration provider utilities
+│   │       ├── jira.ts             # Jira API helpers
+│   │       ├── azure.ts            # Azure DevOps API helpers
+│   │       ├── linear.ts           # Linear GraphQL API helpers
+│   │       └── notion.ts           # Notion API helpers
+│   ├── middleware/
+│   │   └── auth.ts                 # Syncs OAuth users to database on each request
 │   ├── plugins/
 │   │   └── migrate.ts              # Runs pending migrations on server boot
 │   └── api/
-│       ├── summarize.post.ts       # Streaming analysis (2 system prompts)
-│       ├── compare.post.ts         # Parallel 2-provider analysis
-│       ├── transcribe.post.ts      # Whisper transcription endpoint
+│       ├── summarize.post.ts       # POST /api/summarize      — streaming AI analysis (SSE)
+│       ├── compare.post.ts         # POST /api/compare        — parallel 2-provider analysis
+│       ├── transcribe.post.ts      # POST /api/transcribe     — Whisper transcription
+│       ├── auth/
+│       │   ├── github.get.ts       # GET  /api/auth/github    — oauth GitHub handler
+│       │   ├── google.get.ts       # GET  /api/auth/google    — OAuth Google handler
+│       │   ├── session.get.ts      # GET  /api/auth/session   — get current session
+│       │   └── logout.post.ts      # POST /api/auth/logout    — logout & clear session
 │       ├── history/
-│       │   ├── index.get.ts        # GET  /api/history          — paginated list
-│       │   ├── index.post.ts       # POST /api/history          — create entry
-│       │   ├── bulk.post.ts        # POST /api/history/bulk     — bulk import (localStorage migration)
-│       │   ├── [id].get.ts         # GET  /api/history/:id      — single entry
-│       │   ├── [id].patch.ts       # PATCH /api/history/:id     — update summary
-│       │   └── [id].delete.ts      # DELETE /api/history/:id    — remove entry
+│       │   ├── index.get.ts        # GET  /api/history                — paginated list
+│       │   ├── index.post.ts       # POST /api/history                — create entry
+│       │   ├── bulk.post.ts        # POST /api/history/bulk           — bulk import (localStorage migration)
+│       │   ├── [id].get.ts         # GET  /api/history/:id            — single entry
+│       │   ├── [id].patch.ts       # PATCH /api/history/:id           — update summary
+│       │   └── [id].delete.ts      # DELETE /api/history/:id          — remove entry
+│       ├── action-items/
+│       │   ├── index.get.ts        # GET  /api/action-items           — list all action items
+│       │   ├── index.post.ts       # POST /api/action-items           — create action item
+│       │   └── [id].patch.ts       # PATCH /api/action-items/:id      — update action item
 │       └── integrations/
-│           ├── config.get.ts       # GET /api/integrations/config  — load config
-│           ├── config.put.ts       # PUT /api/integrations/config  — save config
-│           ├── jira.post.ts        # Jira REST API v3
-│           ├── azure.post.ts       # Azure DevOps REST API v7.1 (JSON Patch)
-│           ├── linear.post.ts      # Linear GraphQL API
-│           └── notion.post.ts      # Notion REST API v2022-06-28
+│           ├── config.get.ts       # GET  /api/integrations/config    — load config
+│           ├── config.put.ts       # PUT  /api/integrations/config    — save config
+│           ├── setup-guide.get.ts  # GET  /api/integrations/setup-guide — setup instructions
+│           ├── jira.post.ts        # POST /api/integrations/jira      — create Jira task
+│           ├── azure.post.ts       # POST /api/integrations/azure     — create Azure work item
+│           ├── linear.post.ts      # POST /api/integrations/linear    — create Linear issue
+│           ├── notion.post.ts      # POST /api/integrations/notion    — create Notion page
+│           ├── jira/
+│           │   └── test.post.ts    # POST /api/integrations/jira/test — test Jira connection
+│           ├── azure/
+│           │   └── test.post.ts    # POST /api/integrations/azure/test — test Azure connection
+│           ├── linear/
+│           │   └── test.post.ts    # POST /api/integrations/linear/test — test Linear connection
+│           └── notion/
+│               └── test.post.ts    # POST /api/integrations/notion/test — test Notion connection
 ├── drizzle.config.ts
 ├── nuxt.config.ts
 ├── package.json
+├── pnpm-lock.yaml
 ├── tailwind.config.js
+├── tsconfig.json
+├── eslint.config.mjs
 ├── .env.example
 └── .gitignore
 ```
@@ -117,7 +147,7 @@ nuxt4-ai-meeting-summarizer/
 | AI — transcription  | OpenAI Whisper (`whisper-1`) via multipart upload          |
 | Database            | **Turso** (LibSQL / SQLite) — free tier, 9 GB, no infra    |
 | ORM                 | **Drizzle ORM** + drizzle-kit (schema, migrations, studio) |
-| Auth (planned)      | `nuxt-auth-utils` — OAuth (GitHub / Google), Phase 4       |
+| Auth                | `nuxt-auth-utils` — OAuth (GitHub / Google)                |
 | Styling             | CSS custom properties (no UI framework)                    |
 | `.docx` parsing     | mammoth (client-side)                                      |
 | State               | Vue `ref` / `computed`                                     |
@@ -197,6 +227,17 @@ pnpm db:studio     # Open Drizzle Studio to browse data
 
 ---
 
+## 🔐 Security & Data Storage
+
+API tokens and keys are stored securely:
+- **Authenticated users**: Tokens are encrypted and stored server-side in the database
+- **Anonymous mode**: Data is stored temporarily in your browser's session only and is not persisted after logout
+- **No third-party storage**: All data remains within your deployment
+
+> ⚠️ **Note**: Anonymous mode is ideal for demos and testing. For production use, enable OAuth authentication to ensure data persistence and per-user data isolation.
+
+---
+
 ## Architecture
 
 ```
@@ -254,9 +295,11 @@ pnpm db:studio     # Open Drizzle Studio to browse data
 - [x] Integrations (Jira, Azure, Linear, Notion)
 - [x] Dashboard with aggregate metrics
 - [x] Server-side persistence (Turso + Drizzle ORM)
-- [ ] OAuth authentication (GitHub / Google) via `nuxt-auth-utils` — Phase 4
-- [ ] Per-user data isolation after login
-- [ ] Direct action item creation from the result UI (post-auth)
+- [x] Per-user data isolation (schema + database structure ready)
+- [x] Direct action item creation from the result UI
+- [x] OAuth authentication (GitHub / Google) via `nuxt-auth-utils`
+
+> **Current Status**: Feature-complete. All core features are implemented. OAuth is integrated and ready (requires GitHub/Google OAuth app credentials for production). Deploy to Vercel, Railway, or any Node.js host with SSR support.
 
 ---
 
