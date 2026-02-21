@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { IHistoryEntry } from '~/types/index';
-import type { TProvider, IMeetingSummary } from '~/composables/useSummarizer';
+import type { IHistoryEntry, TProvider, IMeetingSummary } from '~/types/index';
 
 // ── Load history ──────────────────────────────────────────────────────────────
 const { history, total: historyTotal, load: historyLoad } = useHistory();

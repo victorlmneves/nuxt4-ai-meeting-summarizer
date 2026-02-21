@@ -6,7 +6,7 @@ import { defineEventHandler, type H3Event } from 'h3';
 import { eq, isNull } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { integrationsConfig } from '#server/db/schema';
-import type { IIntegrationsConfig } from '~/types/index';
+import type { IIntegrationsConfig } from '~/types';
 
 export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();

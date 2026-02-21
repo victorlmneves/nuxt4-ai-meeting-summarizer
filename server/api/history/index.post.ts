@@ -4,7 +4,7 @@
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
 import { useDb } from '#server/utils/db';
 import { meetings } from '#server/db/schema';
-import type { IHistoryEntry } from '~/types/index';
+import type { IHistoryEntry } from '~/types';
 
 export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event: H3Event) => {
 
     // Get userId from session (null if not authenticated)
     const user = await getUserSession(event);
-    const userId = user?.user?.id || null;
+    const userId = user?.id || null;
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();

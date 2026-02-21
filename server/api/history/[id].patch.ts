@@ -5,7 +5,7 @@ import { defineEventHandler, readBody, getRouterParam, createError, type H3Event
 import { eq } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { meetings } from '#server/db/schema';
-import type { IMeetingSummary } from '~/types/index';
+import type { IMeetingSummary } from '~/types';
 
 export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();

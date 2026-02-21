@@ -88,16 +88,17 @@ function saveEdits() {
 
     // Update history entry if this came from history
     if (activeHistoryId.value) {
-        const idx = history.value.findIndex((e: { id: string; }) => e.id === activeHistoryId.value);
+        const idx = history.value.findIndex((e: IHistoryEntry) => e.id === activeHistoryId.value);
+        const entry = history.value[idx];
 
-        if (idx !== -1) {
-            history.value[idx].summary = { ...draft.value };
-            history.value[idx].meetingType = draft.value.meetingType;
+        if (idx !== -1 && entry) {
+            entry.summary = { ...draft.value };
+            entry.meetingType = draft.value.meetingType;
         }
 
         // Persist the edit to the server
         if (activeHistoryId.value) {
-            historyUpdate(activeHistoryId.value, draft.value).catch((err: any) => {
+            historyUpdate(activeHistoryId.value, draft.value).catch((err: unknown) => {
                 console.warn('[saveEdits] Failed to persist edit:', err);
             });
         }
@@ -108,34 +109,66 @@ function saveEdits() {
 }
 
 function addActionItem() {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.actionItems.push({ task: '', owner: '', deadline: '', priority: 'medium' });
 }
 
 function removeActionItem(i: number) {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.actionItems.splice(i, 1);
 }
 
 function addDecision() {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.decisions.push({ decision: '', rationale: '', madeBy: '' });
 }
 
 function removeDecision(i: number) {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.decisions.splice(i, 1);
 }
 
 function addParticipant() {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.participants.push('');
 }
 
 function removeParticipant(i: number) {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.participants.splice(i, 1);
 }
 
 function addTopic() {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.keyTopics.push('');
 }
 
 function removeTopic(i: number) {
+    if (!draft.value) {
+        return;
+    }
+
     draft.value.keyTopics.splice(i, 1);
 }
 
@@ -200,7 +233,7 @@ function parseVtt(raw: string): string {
 
         const m = t.match(/^<v ([^>]+)>(.*)$/);
 
-        if (m) {
+        if (m && m[1] && m[2]) {
             const speaker = m[1].trim();
             const text = m[2].replace(/<[^>]+>/g, '').trim();
 
@@ -402,17 +435,17 @@ function buildMarkdown(s: IMeetingSummary, prov?: string): string {
     lines.push(`*${date} · Analysed via ${via}*`);
     lines.push('');
     lines.push('## Participants');
-    lines.push(s.participants.map((p: any) => `- ${p}`).join('\n'));
+    lines.push(s.participants.map((p: string) => `- ${p}`).join('\n'));
     lines.push('');
     lines.push('## Key Topics');
-    lines.push(s.keyTopics.map((t: any) => `- ${t}`).join('\n'));
+    lines.push(s.keyTopics.map((t: string) => `- ${t}`).join('\n'));
     lines.push('');
     lines.push('## Executive Summary');
     lines.push(s.summary);
     lines.push('');
     lines.push('## Action Items');
 
-    s.actionItems.forEach((item: { priority: string; task: any; owner: any; deadline: any; }) => {
+    s.actionItems.forEach((item: { priority: string; task: string; owner: string; deadline: string }) => {
         lines.push(`- **[${item.priority.toUpperCase()}]** ${item.task}`);
         lines.push(`  - Owner: ${item.owner}`);
         lines.push(`  - Deadline: ${item.deadline}`);
@@ -421,7 +454,7 @@ function buildMarkdown(s: IMeetingSummary, prov?: string): string {
     lines.push('');
     lines.push('## Decisions Made');
 
-    s.decisions.forEach((d: { decision: any; rationale: any; madeBy: any; }, i: number) => {
+    s.decisions.forEach((d: { decision: string; rationale: string; madeBy: string }, i: number) => {
         lines.push(`${i + 1}. **${d.decision}**`);
         if (d.rationale) lines.push(`   *${d.rationale}*`);
         lines.push(`   — ${d.madeBy}`);
@@ -440,7 +473,7 @@ function buildEmail(s: IMeetingSummary): string {
     if (s.actionItems.length) {
         lines.push('Action Items', '------------');
 
-        s.actionItems.forEach((item: { task: any; owner: any; deadline: any; }) => {
+        s.actionItems.forEach((item: { task: string; owner: string; deadline: string; priority: string }) => {
             lines.push(`• ${item.task}`);
             lines.push(`  Owner: ${item.owner} | Deadline: ${item.deadline}`);
         });
@@ -451,7 +484,7 @@ function buildEmail(s: IMeetingSummary): string {
     if (s.decisions.length) {
         lines.push('Decisions', '---------');
 
-        s.decisions.forEach((d: { decision: any; }) => lines.push(`• ${d.decision}`));
+        s.decisions.forEach((d: { decision: string; rationale: string; madeBy: string }) => lines.push(`• ${d.decision}`));
 
         lines.push('');
     }
@@ -525,9 +558,64 @@ function toggleCompareProvider(id: TProvider) {
     }
 }
 
+function isCompareProviderDisabled(id: TProvider): boolean {
+    return (
+        compareProviders.value.includes(id) &&
+        compareProviders.value.filter((x: TProvider) => x === id).length === 1 &&
+        compareProviders.value.length === 2
+    );
+}
+
 // Highlight differences: returns true if the two values differ meaningfully
-function valuesDiffer(a: any, b: any): boolean {
+function valuesDiffer(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) !== JSON.stringify(b);
+}
+
+const compareSides = ['a', 'b'] as const;
+
+// Helper to safely access compare results
+function getCompareResult(side: 'a' | 'b') {
+    return compareResults.value?.[side]?.result;
+}
+
+function getCompareDecisions(side: 'a' | 'b') {
+    const result = getCompareResult(side);
+    
+    return result && !isError(result) ? result.decisions ?? [] : [];
+}
+
+function getCompareDecisionsLength(side: 'a' | 'b'): number {
+    return getCompareDecisions(side).length;
+}
+
+function getCompareMeetingType(side: 'a' | 'b'): string {
+    const result = getCompareResult(side);
+
+    return result && !isError(result) ? result.meetingType : '';
+}
+
+function getCompareKeyTopics(side: 'a' | 'b'): string[] {
+    const result = getCompareResult(side);
+
+    return result && !isError(result) ? result.keyTopics ?? [] : [];
+}
+
+function getCompareSummary(side: 'a' | 'b'): string {
+    const result = getCompareResult(side);
+
+    return result && !isError(result) ? result.summary : '';
+}
+
+function getCompareActionItems(side: 'a' | 'b') {
+    const result = getCompareResult(side);
+
+    return result && !isError(result) ? result.actionItems ?? [] : [];
+}
+
+function getCompareResultAsAny(side: 'a' | 'b'): IMeetingSummary | undefined {
+    const result = getCompareResult(side);
+
+    return result && !isError(result) ? result : undefined;
 }
 </script>
 
@@ -629,11 +717,7 @@ function valuesDiffer(a: any, b: any): boolean {
                             v-for="p in providers"
                             :key="p.id"
                             :class="['toggle-btn', compareProviders.includes(p.id) ? 'active' : 'inactive']"
-                            :disabled="
-                                compareProviders.includes(p.id) &&
-                                compareProviders.filter((x: any) => x === p.id).length === 1 &&
-                                compareProviders.length === 2
-                            "
+                            :disabled="isCompareProviderDisabled(p.id)"
                             @click="
                                 compareProviders.includes(p.id)
                                     ? toggleCompareProvider(p.id)
@@ -833,7 +917,7 @@ function valuesDiffer(a: any, b: any): boolean {
                                 <span class="meeting-type-badge">{{ result.meetingType }}</span>
                                 <span class="provider-badge">via {{ providerLabel }}</span>
                             </template>
-                            <template v-else>
+                            <template v-else-if="draft">
                                 <input v-model="draft.meetingType" class="edit-meeting-type" placeholder="Meeting type" />
                                 <span class="editing-indicator">✎ Editing</span>
                             </template>
@@ -864,7 +948,7 @@ function valuesDiffer(a: any, b: any): boolean {
                             </div>
                         </template>
                         <!-- Edit mode -->
-                        <template v-else>
+                        <template v-else-if="draft">
                             <div class="edit-chip-group">
                                 <span class="chips-label">Participants</span>
                                 <div class="edit-chips">
@@ -895,7 +979,7 @@ function valuesDiffer(a: any, b: any): boolean {
                             <h2 class="card-title">Executive Summary</h2>
                         </div>
                         <p v-if="!editing" class="summary-text">{{ result.summary }}</p>
-                        <textarea v-else v-model="draft.summary" class="edit-summary" rows="6" placeholder="Executive summary..." />
+                        <textarea v-else-if="draft" v-model="draft.summary" class="edit-summary" rows="6" placeholder="Executive summary..." />
                     </div>
 
                     <!-- Action Items -->
@@ -903,7 +987,7 @@ function valuesDiffer(a: any, b: any): boolean {
                         <div class="card-header">
                             <span class="card-icon">◉</span>
                             <h2 class="card-title">Action Items</h2>
-                            <span class="card-count">{{ editing ? draft.actionItems.length : result.actionItems.length }}</span>
+                            <span class="card-count">{{ editing ? draft?.actionItems.length : result.actionItems.length }}</span>
                         </div>
                         <!-- View mode -->
                         <div v-if="!editing" class="action-items">
@@ -962,7 +1046,7 @@ function valuesDiffer(a: any, b: any): boolean {
                             </div>
                         </div>
                         <!-- Edit mode -->
-                        <div v-else class="edit-action-items">
+                        <div v-else-if="draft" class="edit-action-items">
                             <div v-for="(item, i) in draft.actionItems" :key="i" class="edit-action-item">
                                 <div class="edit-action-main">
                                     <select
@@ -993,7 +1077,7 @@ function valuesDiffer(a: any, b: any): boolean {
                         <div class="card-header">
                             <span class="card-icon">◈</span>
                             <h2 class="card-title">Decisions Made</h2>
-                            <span class="card-count">{{ editing ? draft.decisions.length : result.decisions.length }}</span>
+                            <span class="card-count">{{ editing ? draft?.decisions.length : result.decisions.length }}</span>
                         </div>
                         <!-- View mode -->
                         <div v-if="!editing" class="decisions">
@@ -1007,7 +1091,7 @@ function valuesDiffer(a: any, b: any): boolean {
                             </div>
                         </div>
                         <!-- Edit mode -->
-                        <div v-else class="edit-decisions">
+                        <div v-else-if="draft" class="edit-decisions">
                             <div v-for="(d, i) in draft.decisions" :key="i" class="edit-decision-item">
                                 <div class="edit-decision-header">
                                     <span class="decision-number">{{ String(i + 1).padStart(2, '0') }}</span>
@@ -1116,7 +1200,7 @@ function valuesDiffer(a: any, b: any): boolean {
 
                     <!-- Side by side columns -->
                     <div class="compare-grid">
-                        <div v-for="side in ['a', 'b'] as const" :key="side" class="compare-col">
+                        <div v-for="side in compareSides" :key="side" class="compare-col">
                             <!-- Column header -->
                             <div class="compare-col-header">
                                 <span class="compare-side-badge" :class="side">{{ side.toUpperCase() }}</span>
@@ -1125,7 +1209,7 @@ function valuesDiffer(a: any, b: any): boolean {
 
                             <!-- Error state -->
                             <div v-if="isError(compareResults[side].result)" class="compare-error">
-                                ⚠ {{ (compareResults[side].result as any).error }}
+                                ⚠ {{ (compareResults[side].result).error }}
                             </div>
 
                             <!-- Result -->
@@ -1136,26 +1220,29 @@ function valuesDiffer(a: any, b: any): boolean {
                                         class="compare-field"
                                         :class="{
                                             differs: valuesDiffer(
-                                                compareResults.a.result?.meetingType,
-                                                compareResults.b.result?.meetingType
+                                                !isError(compareResults.a.result) ? compareResults.a.result?.meetingType : undefined,
+                                                !isError(compareResults.b.result) ? compareResults.b.result?.meetingType : undefined
                                             ),
                                         }"
                                     >
                                         <span class="compare-field-label">Meeting type</span>
-                                        <span class="compare-field-value">{{ (compareResults[side].result as any).meetingType }}</span>
+                                        <span class="compare-field-value">{{ getCompareMeetingType(side) }}</span>
                                     </div>
 
                                     <!-- Key topics -->
                                     <div
                                         class="compare-field"
                                         :class="{
-                                            differs: valuesDiffer(compareResults.a.result?.keyTopics, compareResults.b.result?.keyTopics),
+                                            differs: valuesDiffer(
+                                                !isError(compareResults.a.result) ? compareResults.a.result?.keyTopics : undefined,
+                                                !isError(compareResults.b.result) ? compareResults.b.result?.keyTopics : undefined
+                                            ),
                                         }"
                                     >
                                         <span class="compare-field-label">Key topics</span>
                                         <div class="compare-chips">
                                             <span
-                                                v-for="t in (compareResults[side].result as any).keyTopics"
+                                                v-for="t in getCompareKeyTopics(side)"
                                                 :key="t"
                                                 class="chip chip-purple"
                                             >
@@ -1168,11 +1255,14 @@ function valuesDiffer(a: any, b: any): boolean {
                                     <div
                                         class="compare-field"
                                         :class="{
-                                            differs: valuesDiffer(compareResults.a.result?.summary, compareResults.b.result?.summary),
+                                            differs: valuesDiffer(
+                                                !isError(compareResults.a.result) ? compareResults.a.result?.summary : undefined,
+                                                !isError(compareResults.b.result) ? compareResults.b.result?.summary : undefined
+                                            ),
                                         }"
                                     >
                                         <span class="compare-field-label">Summary</span>
-                                        <p class="compare-summary">{{ (compareResults[side].result as any).summary }}</p>
+                                        <p class="compare-summary">{{ getCompareSummary(side) }}</p>
                                     </div>
 
                                     <!-- Action items -->
@@ -1180,20 +1270,20 @@ function valuesDiffer(a: any, b: any): boolean {
                                         class="compare-field"
                                         :class="{
                                             differs: valuesDiffer(
-                                                compareResults.a.result?.actionItems?.length,
-                                                compareResults.b.result?.actionItems?.length
+                                                !isError(compareResults.a.result) ? compareResults.a.result?.actionItems?.length : undefined,
+                                                !isError(compareResults.b.result) ? compareResults.b.result?.actionItems?.length : undefined
                                             ),
                                         }"
                                     >
                                         <span class="compare-field-label">
                                             Action Items
                                             <span class="compare-count-badge">
-                                                {{ (compareResults[side].result as any).actionItems.length }}
+                                                {{ getCompareActionItems(side).length }}
                                             </span>
                                         </span>
                                         <div class="compare-action-list">
                                             <div
-                                                v-for="(item, i) in (compareResults[side].result as any).actionItems"
+                                                v-for="(item, i) in getCompareActionItems(side)"
                                                 :key="i"
                                                 class="compare-action-item"
                                             >
@@ -1219,20 +1309,20 @@ function valuesDiffer(a: any, b: any): boolean {
                                         class="compare-field"
                                         :class="{
                                             differs: valuesDiffer(
-                                                compareResults.a.result?.decisions?.length,
-                                                compareResults.b.result?.decisions?.length
+                                                !isError(compareResults.a.result) ? compareResults.a.result?.decisions?.length : undefined,
+                                                !isError(compareResults.b.result) ? compareResults.b.result?.decisions?.length : undefined
                                             ),
                                         }"
                                     >
                                         <span class="compare-field-label">
                                             Decisions
                                             <span class="compare-count-badge">
-                                                {{ (compareResults[side].result as any).decisions.length }}
-                                            </span>
+                                                    {{ getCompareDecisionsLength(side) }}
+                                                </span>
                                         </span>
                                         <div class="compare-decision-list">
                                             <div
-                                                v-for="(d, i) in (compareResults[side].result as any).decisions"
+                                                v-for="(d, i) in getCompareDecisions(side)"
                                                 :key="i"
                                                 class="compare-decision-item"
                                             >
@@ -1251,15 +1341,21 @@ function valuesDiffer(a: any, b: any): boolean {
                                         <span class="compare-field-label">Export</span>
                                         <div class="export-actions">
                                             <button
+                                                v-if="getCompareResultAsAny(side) && compareResults"
                                                 class="export-btn"
                                                 @click="
-                                                    copyToClipboard(
-                                                        buildMarkdown(
-                                                            compareResults[side].result as any,
-                                                            providerName(compareResults[side].provider)
-                                                        ),
-                                                        `md-${side}`
-                                                    )
+                                                    () => {
+                                                        const result = getCompareResultAsAny(side);
+                                                        if (result && compareResults && compareResults[side]) {
+                                                            copyToClipboard(
+                                                                buildMarkdown(
+                                                                    result,
+                                                                    providerName(compareResults[side].provider)
+                                                                ),
+                                                                `md-${side}`
+                                                            );
+                                                        }
+                                                    }
                                                 "
                                             >
                                                 <span class="export-btn-icon">◻</span>
@@ -1269,12 +1365,18 @@ function valuesDiffer(a: any, b: any): boolean {
                                                 </span>
                                             </button>
                                             <button
+                                                v-if="getCompareResultAsAny(side) && compareResults"
                                                 class="export-btn"
                                                 @click="
-                                                    downloadMarkdown(
-                                                        compareResults[side].result as any,
-                                                        providerName(compareResults[side].provider)
-                                                    )
+                                                    () => {
+                                                        const result = getCompareResultAsAny(side);
+                                                        if (result && compareResults && compareResults[side]) {
+                                                            downloadMarkdown(
+                                                                result,
+                                                                providerName(compareResults[side].provider)
+                                                            );
+                                                        }
+                                                    }
                                                 "
                                             >
                                                 <span class="export-btn-icon">↓</span>

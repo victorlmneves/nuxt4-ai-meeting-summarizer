@@ -2,7 +2,7 @@
 // Creates pages in a Notion database from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-import type { IActionItem } from '~/types/index';
+import type { IActionItem } from '~/types';
 
 interface INotionPagePayload {
     parent: { database_id: string };

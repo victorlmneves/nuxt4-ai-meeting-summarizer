@@ -6,7 +6,7 @@ import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
 import { eq, and, isNull } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { integrationsConfig } from '#server/db/schema';
-import type { IIntegrationsConfig } from '~/types/index';
+import type { IIntegrationsConfig } from '~/types';
 
 const VALID_SERVICES: (keyof IIntegrationsConfig)[] = ['jira', 'linear', 'notion', 'azure'];
 

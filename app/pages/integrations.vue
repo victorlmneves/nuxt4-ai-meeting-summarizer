@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IIntegrationsConfig } from '~/types';
+import type { IIntegrationsConfig } from '~/types/index';
 
 const STORAGE_KEY = 'minutai:integrations';
 

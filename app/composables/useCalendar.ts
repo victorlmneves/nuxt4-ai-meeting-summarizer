@@ -1,4 +1,4 @@
-import type { IActionItem } from './useSummarizer';
+import type { IActionItem } from '~/types';
 
 // ── Date parsing ──────────────────────────────────────────────────────────────
 // Tries to extract a real date from informal deadline strings like:

@@ -1,7 +1,4 @@
-import type { IHistoryEntry, IHistoryPage, IMeetingSummary } from '~/types/index';
-
-// Re-export so existing imports from this composable keep working
-export type { IHistoryEntry } from '~/types/index';
+import type { IHistoryEntry, IHistoryPage, IMeetingSummary } from '~/types';
 
 const LEGACY_KEY = 'minutai:history';
 

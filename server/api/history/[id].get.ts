@@ -5,7 +5,7 @@ import { defineEventHandler, getRouterParam, createError, type H3Event } from 'h
 import { eq } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { meetings } from '#server/db/schema';
-import type { IHistoryEntry } from '~/types/index';
+import type { IHistoryEntry } from '~/types';
 
 export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();

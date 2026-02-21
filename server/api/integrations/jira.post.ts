@@ -2,7 +2,7 @@
 // Creates issues in a Jira project from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-import type { IActionItem } from '~/types/index';
+import type { IActionItem } from '~/types';
 
 // Map MinutAI priorities to Jira priority names
 const PRIORITY_MAP: Record<string, string> = {

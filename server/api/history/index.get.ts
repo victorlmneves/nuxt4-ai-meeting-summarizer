@@ -3,10 +3,10 @@
 // Filtered by userId from session when auth is active (nullable in anonymous mode).
 
 import { defineEventHandler, getQuery, type H3Event } from 'h3';
-import { desc, eq, sql, isNull, and } from 'drizzle-orm';
+import { desc, eq, sql, isNull } from 'drizzle-orm';
 import { useDb } from '#server/utils/db';
 import { meetings } from '#server/db/schema';
-import type { IHistoryEntry } from '~/types/index';
+import type { IHistoryEntry } from '~/types';
 
 export default defineEventHandler(async (event: H3Event) => {
     const db = useDb();
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event: H3Event) => {
 
     // Get userId from session (null if not authenticated)
     const user = await getUserSession(event);
-    const userId = user?.user?.id || null;
+    const userId = user?.id || null;
 
     // Build where clause: filter by userId if authenticated, otherwise return only anonymous meetings
     const where = userId ? eq(meetings.userId, userId) : isNull(meetings.userId);

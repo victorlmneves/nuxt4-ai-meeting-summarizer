@@ -24,6 +24,7 @@ const newItemPriority = ref<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
 const loadItems = async () => {
     isLoading.value = true;
     error.value = '';
+
     try {
         items.value = await $fetch(`/api/action-items?meetingId=${props.meetingId}`);
     } catch (err: unknown) {

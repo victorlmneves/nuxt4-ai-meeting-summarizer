@@ -1,4 +1,4 @@
-import type { IMeetingSummary, IIntegrationsConfig } from '~/types/index';
+import type { IMeetingSummary, IIntegrationsConfig } from '~/types';
 
 export type TIntegrationId = 'jira' | 'linear' | 'notion' | 'azure';
 

@@ -2,7 +2,7 @@
 // Creates issues in a Linear team from meeting action items
 
 import { defineEventHandler, readBody, createError, type H3Event } from 'h3';
-import type { IActionItem } from '~/types/index';
+import type { IActionItem } from '~/types';
 
 // Linear priority: 0=No priority, 1=Urgent, 2=High, 3=Medium, 4=Low
 const PRIORITY_MAP: Record<string, number> = {

@@ -1,4 +1,4 @@
-import type { TProvider, IMeetingSummary } from './useSummarizer';
+import type { TProvider, IMeetingSummary } from '~/types';
 
 export interface ICompareResult {
     provider: TProvider;
