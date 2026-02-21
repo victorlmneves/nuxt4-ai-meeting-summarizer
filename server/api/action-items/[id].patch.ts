@@ -63,11 +63,16 @@ export default defineEventHandler(async (event: H3Event) => {
     }
 
     const updated = { ...item, ...updateData };
+
     return updated;
 });
 
 /**
  * Sync status to external service
+ * @param {string | null} service - The external service name
+ * @param {string} externalId - The external service ID
+ * @param {string} status - The new status
+ * @param {string | null} userId - The user ID
  */
 async function syncStatusToService(
     service: string | null,
@@ -80,15 +85,19 @@ async function syncStatusToService(
     try {
         if (service === 'jira') {
             const config = await getIntegrationConfig(userId, 'jira');
+
             await transitionJiraIssue(config, externalId, status);
         } else if (service === 'linear') {
             const config = await getIntegrationConfig(userId, 'linear');
+
             await updateLinearIssueState(config, externalId, status);
         } else if (service === 'notion') {
             const config = await getIntegrationConfig(userId, 'notion');
+
             await updateNotionItemStatus(config, externalId, status);
         } else if (service === 'azure') {
             const config = await getIntegrationConfig(userId, 'azure');
+
             await updateAzureWorkItemState(config, externalId, status);
         }
     } catch (err) {
@@ -99,6 +108,9 @@ async function syncStatusToService(
 
 /**
  * Helper: Get integration config from DB
+ * @param {string | null} userId - The user ID
+ * @param {string} service - The service name
+ * @returns {Promise<any>} The parsed integration configuration
  */
 async function getIntegrationConfig(userId: string | null, service: string) {
     const db = useDb();

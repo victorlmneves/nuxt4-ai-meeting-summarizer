@@ -58,8 +58,8 @@ function parseDeadline(deadline: string, meetingDate = new Date()): Date | null 
 
     if (monthMatch) {
         const day = Number(monthMatch[1] ?? monthMatch[4]);
-        const monthStr = (monthMatch[2] ?? monthMatch[3]).slice(0, 3);
-        const month = months[monthStr] ?? months[monthMatch[2]?.toLowerCase() ?? ''];
+        const monthStr = (monthMatch[2] ?? monthMatch[3] ?? '').slice(0, 3);
+        const month = months[monthStr] ?? months[(monthMatch[2] ?? monthMatch[3] ?? '').toLowerCase()];
 
         if (!isNaN(day) && month !== undefined) {
             const year = today.getMonth() > month ? today.getFullYear() + 1 : today.getFullYear();

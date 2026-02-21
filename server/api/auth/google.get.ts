@@ -1,12 +1,20 @@
 import { useDb } from '#server/utils/db';
 import { users } from '#server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import type { H3Event } from 'h3';
+
+interface GoogleUser {
+    sub: string;
+    name: string;
+    email: string;
+    picture: string;
+}
 
 export default defineOAuthGoogleEventHandler({
     config: {
         emailRequired: true,
     },
-    async onSuccess(event, { user: googleUser }) {
+    async onSuccess(event: H3Event, { user: googleUser }: { user: GoogleUser }) {
         const db = useDb();
 
         // Find or create user

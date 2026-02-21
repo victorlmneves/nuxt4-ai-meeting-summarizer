@@ -108,7 +108,8 @@ export default defineEventHandler(async (event: H3Event) => {
  * Push action item to external service (Jira, Linear, Notion, Azure DevOps)
  * @param {string} service - The external service name (jira, linear, notion, or azure)
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {object} user - The user session object with id
+ * @param {object} user - The user session object
+ * @param {string | null} user.id - The user ID or null for anonymous users
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
 async function pushActionItemToService(
@@ -156,7 +157,8 @@ async function getIntegrationConfig(userId: string | null, service: string) {
 /**
  * Create Jira action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {object} user - The user session object with id
+ * @param {object} user - The user session object
+ * @param {string | null} user.id - The user ID or null for anonymous users
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
 async function createJiraActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
@@ -168,7 +170,8 @@ async function createJiraActionItem(item: CreateActionItemRequest['items'][0], u
 /**
  * Create Linear action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {object} user - The user session object with id
+ * @param {object} user - The user session object
+ * @param {string | null} user.id - The user ID or null for anonymous users
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
 async function createLinearActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
@@ -180,7 +183,8 @@ async function createLinearActionItem(item: CreateActionItemRequest['items'][0],
 /**
  * Create Notion action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {object} user - The user session object with id
+ * @param {object} user - The user session object
+ * @param {string | null} user.id - The user ID or null for anonymous users
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
 async function createNotionActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {
@@ -192,7 +196,8 @@ async function createNotionActionItem(item: CreateActionItemRequest['items'][0],
 /**
  * Create Azure action item
  * @param {CreateActionItemRequest['items'][0]} item - The action item data to push
- * @param {object} user - The user session object with id
+ * @param {object} user - The user session object
+ * @param {string | null} user.id - The user ID or null for anonymous users
  * @returns {Promise<{ id: string; url: string }>} Promise with the external service ID and URL
  */
 async function createAzureActionItem(item: CreateActionItemRequest['items'][0], user: { id: string | null }) {

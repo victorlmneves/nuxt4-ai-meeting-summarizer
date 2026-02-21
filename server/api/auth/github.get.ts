@@ -1,6 +1,7 @@
 import { useDb } from '#server/utils/db';
 import { users } from '#server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { createError } from 'h3';
 
 export default defineOAuthGitHubEventHandler({
     config: {
@@ -8,6 +9,11 @@ export default defineOAuthGitHubEventHandler({
     },
     async onSuccess(event, { user: githubUser }) {
         const db = useDb();
+
+        // Validate email (required by config)
+        if (!githubUser.email) {
+            throw createError({ statusCode: 400, message: 'Email is required for authentication' });
+        }
 
         // Find or create user
         const existing = await db
